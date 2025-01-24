@@ -114,7 +114,12 @@
     <string-array name="config_preinstalled_speech_services">
         <item>com.google.research.projectrelate/com.google.speech.projectrelate.InitialActivity</item>
     </string-array>
-    <array name="face_enroll_primary_buckets" />
+    <integer-array name="face_enroll_primary_buckets">
+        <item>2</item>
+        <item>7</item>
+        <item>12</item>
+        <item>17</item>
+    </integer-array>
     <integer-array name="network_mode_3g_deprecated_carrier_id">
         <item>3</item>
         <item>4</item>
