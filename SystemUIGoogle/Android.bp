@@ -67,7 +67,6 @@ android_library {
         "matchmaker-lib",
         "touchcontext-lib",
         "nga-lib",
-        "columbus-lib",
         "androidx.concurrent_concurrent-futures-ktx",
         "androidx.appsearch_appsearch",
         "androidx.appsearch_appsearch-builtin-types",

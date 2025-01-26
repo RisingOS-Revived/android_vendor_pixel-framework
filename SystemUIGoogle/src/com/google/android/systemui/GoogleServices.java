@@ -20,8 +20,6 @@ import com.android.systemui.util.wakelock.WakeLockLogger;
 import com.google.android.systemui.ambientmusic.AmbientIndicationContainer;
 import com.google.android.systemui.ambientmusic.AmbientIndicationService;
 import com.google.android.systemui.input.TouchContextService;
-import com.google.android.systemui.columbus.ColumbusContext;
-import com.google.android.systemui.columbus.ColumbusServiceWrapper;
 
 import dagger.Lazy;
 import java.io.PrintWriter;
@@ -36,7 +34,6 @@ public class GoogleServices extends VendorServices {
     private final ArrayList<Object> mServices;
     private final ActivityStarter mActivityStarter;
     private final AlarmManager mAlarmManager;
-    private final Lazy<ColumbusServiceWrapper> mColumbusServiceLazy;
     private final Handler mBgHandler;
     private final NotificationShadeWindowView mNotificationShadeWindowView;
     private final PowerInteractor mPowerInteractor;
@@ -49,7 +46,6 @@ public class GoogleServices extends VendorServices {
             Context context,
             ActivityStarter activityStarter,
             AlarmManager alarmManager,
-            Lazy<ColumbusServiceWrapper> columbusServiceWrapperLazy,
             NotificationShadeWindowView notificationShadeWindowView,
             PowerInteractor powerInteractor,
             SelectedUserInteractor selectedUserInteractor,
@@ -61,7 +57,6 @@ public class GoogleServices extends VendorServices {
         mActivityStarter = activityStarter;
         mServices = new ArrayList<>();
         mAlarmManager = alarmManager;
-        mColumbusServiceLazy = columbusServiceWrapperLazy;
         mNotificationShadeWindowView = notificationShadeWindowView;
         mPowerInteractor = powerInteractor;
         mSelectedUserInteractor = selectedUserInteractor;
@@ -72,9 +67,6 @@ public class GoogleServices extends VendorServices {
 
     @Override
     public void start() {
-        if (new ColumbusContext(mContext).isAvailable()) {
-            addService(mColumbusServiceLazy.get());
-        }
         if (mContext.getResources().getBoolean(R.bool.config_touch_context_enabled)) {
             addService(new TouchContextService(mContext));
         }

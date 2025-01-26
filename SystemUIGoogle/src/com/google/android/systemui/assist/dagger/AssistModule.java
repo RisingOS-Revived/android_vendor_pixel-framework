@@ -16,8 +16,6 @@
 
 package com.google.android.systemui.assist.dagger;
 
-import static org.pixelexperience.systemui.Dependency.*;
-
 import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
@@ -81,6 +79,9 @@ import dagger.multibindings.ElementsIntoSet;
 
 @Module
 public abstract class AssistModule {
+    private static final String OVERLAY_UI_HOST_PARENT_VIEW_GROUP =
+            "overlay_ui_host_parent_view_group";
+
     @Provides
     @SysUISingleton
     static NavBarFader provideNavBarFader(NavigationBarController navigationBarController, Handler handler) {
