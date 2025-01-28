@@ -17,7 +17,10 @@
     <string name="gesture_skip_title">Skip gesture</string>
     <string name="gesture_tap_title">Tap Gesture</string>
     <string name="keywords_touch_sensitivity">touch, sensitivity, sensitive, screen protector, film, responsive, responsiveness</string>
+    <string name="keywords_touch_sensitivity_settings">touch, adaptive, sensitivity, sensitive, screen protector, film, responsive, responsiveness</string>
     <string name="keywords_wake_display" />
+    <string name="touch_sensitivity_settings_summary">Adjust touch screen sensitivity</string>
+    <string name="touch_sensitivity_settings_title">Touch sensitivity</string>
     <string name="touch_sensitivity_summary">Increase touch sensitivity and improve touch when using a screen protector</string>
     <string name="touch_sensitivity_title">Screen protector mode</string>
     <string name="columbus_title">Quick Tap to start actions</string>
@@ -36,6 +39,14 @@
     <string name="adaptive_charging_link_a11y">Learn more about Adaptive Charging</string>
     <string name="adaptive_charging_main_switch_title">Use Adaptive Charging</string>
     <string name="adaptive_charging_time_estimate"><b>Adaptive Charging</b> • Full by %1$s</string>
+    <string name="adaptive_touch_sensitivity_summary">Touch sensitivity will automatically adjust to your environment, activities and screen protector</string>
+    <string name="adaptive_touch_sensitivity_title">Adaptive touch</string>
+    <string name="adaptive_vibration_footer">Your phone\'s microphone and other sensors are used to determine sound levels and context. No data is ever recorded.</string>
+    <string name="adaptive_vibration_settings_summary">Automatically adjust your phone’s vibrations based on environment like when it’s in a pocket or a loud place</string>
+    <string name="adaptive_vibration_summary_off">Off</string>
+    <string name="adaptive_vibration_summary_on">On</string>
+    <string name="adaptive_vibration_title">Adaptive vibration</string>
+    <string name="adaptive_vibration_toggle_title">Use adaptive vibration</string>
     <string name="ambient_display_wake_screen_footer"><annotation link="link">Preferences</annotation></string>
     <string name="ambient_display_wake_screen_summary" />
     <string name="add_bypassed_application_hint">No apps added</string>
@@ -497,6 +508,9 @@ Flip your phone over to try."</string>
     <string name="rtt_settings_visible_during_call">Visible during call</string>
     <string name="screen_time_summary_usage_today">%1$s today</string>
     <string name="search_bar_account_avatar_content_description">Profile picture, double tap to open Google Account</string>
+    <string name="search_gesture_category_title">Search</string>
+    <string name="search_gesture_feature_summary">Touch and hold the Home button or the navigation handle to search using the content on your screen.</string>
+    <string name="search_gesture_feature_title">Circle to Search</string>
     <string name="security_dismiss_dialog_dismiss_button">Dismiss</string>
     <string name="security_dismiss_dialog_title">Dismiss this warning?</string>
     <string name="security_settings_face_enroll_consent_introduction_title">Allow Face Unlock</string>
@@ -632,7 +646,6 @@ To improve performance, you can set up Face Unlock again in Settings."</string>
     <string name="speed_boost_summary_off">Off</string>
     <string name="speed_boost_summary_on">On</string>
     <string name="speed_boost_title">Spectrum Speed Boost</string>
-    <string name="search_gesture_category_title">Screen search</string>
     <string name="search_long_press_home_button_summary">Press and hold the home button to initiate Google search over your screen.</string>
     <string name="search_long_press_home_button_title">Hold Home to search</string>
     <string name="search_press_hold_gesture_summary">Press and hold the navigation handle to invoke search over your screen.</string>

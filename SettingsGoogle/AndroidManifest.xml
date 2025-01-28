@@ -288,6 +288,19 @@ xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVer
             </intent-filter>
         </activity>
         <activity android:exported="true" android:label="@string/adaptive_charging_title" android:name="com.google.android.settings.fuelgauge.adaptivecharging.AdaptiveChargingSettingsActivity" android:permission="com.google.android.settings.fuelgauge.BATTERY_SETTING"/>
+         <activity
+            android:name="com.google.android.settings.touch.TouchSensitivitySettingsActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="com.google.android.settings.touch.TOUCH_SENSITIVITY_SETTINGS"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <meta-data
+                android:name="com.android.settings.FRAGMENT_CLASS"
+                android:value="com.google.android.settings.touch.TouchSensitivitySettings"/>
+        </activity>
         <provider android:authorities="com.google.android.settings.external" android:exported="true" android:grantUriPermissions="true" android:multiprocess="false" android:name="com.google.android.settings.external.ExternalSettingsProvider"/>
         <receiver android:exported="true" android:name="com.google.android.settings.routines.RoutinesActionBroadcastReceiver" android:permission="com.google.android.settings.routines.ROUTINES_ACTIONS">
             <intent-filter>
