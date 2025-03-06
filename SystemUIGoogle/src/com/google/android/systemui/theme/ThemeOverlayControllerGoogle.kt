@@ -69,6 +69,7 @@ class ThemeOverlayControllerGoogle @Inject constructor(
     uiModeManager: UiModeManager,
     activityManager: ActivityManager,
     tunerService: TunerService,
+    configurationController: ConfigurationController,
     @param:Main private val mainResources: Resources,
     private val systemPropertiesHelper: SystemPropertiesHelper
 ) : ThemeOverlayController(
@@ -92,7 +93,8 @@ class ThemeOverlayControllerGoogle @Inject constructor(
     keyguardTransitionInteractor,
     uiModeManager,
     activityManager,
-    tunerService
+    tunerService,
+    configurationController
 ) {
     init {
         setBootColorSystemProps()
