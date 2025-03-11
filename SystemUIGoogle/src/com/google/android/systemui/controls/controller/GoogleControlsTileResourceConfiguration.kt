@@ -1,4 +1,4 @@
-package com.google.android.systemui.controls
+package com.google.android.systemui.controls.controller
 
 import android.content.ComponentName
 

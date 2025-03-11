@@ -34,6 +34,7 @@ import com.android.systemui.accessibility.data.repository.AccessibilityRepositor
 import com.android.systemui.assist.AssistManager;
 import com.android.systemui.battery.BatterySaverModule;
 import com.android.systemui.broadcast.BroadcastDispatcher;
+import com.android.systemui.clipboardoverlay.dagger.ClipboardOverlayOverrideModule;
 import com.android.systemui.controls.controller.ControlsTileResourceConfiguration;
 import com.android.systemui.dagger.GlobalRootComponent;
 import com.android.systemui.dagger.qualifiers.Background;
@@ -45,7 +46,12 @@ import com.android.systemui.display.ui.viewmodel.ConnectingDisplayViewModel;
 import com.android.systemui.dock.DockManager;
 import com.android.systemui.dock.DockManagerImpl;
 import com.android.systemui.doze.DozeHost;
+import com.android.systemui.education.dagger.ContextualEducationModule;
+import com.android.systemui.emergency.EmergencyGestureModule;
 import com.android.systemui.dump.DumpManager;
+import com.android.systemui.keyboard.shortcut.ShortcutHelperModule;
+import com.android.systemui.keyguard.dagger.KeyguardModule;
+import com.android.systemui.keyguard.ui.composable.blueprint.DefaultBlueprintModule;
 import com.android.systemui.keyguard.ui.view.layout.blueprints.KeyguardBlueprintModule;
 import com.android.systemui.keyguard.ui.view.layout.sections.KeyguardSectionsModule;
 import com.android.systemui.lineage.LineageModule;
@@ -65,6 +71,7 @@ import com.android.systemui.qs.tileimpl.QSFactoryImpl;
 import com.android.systemui.reardisplay.RearDisplayModule;
 import com.android.systemui.recents.Recents;
 import com.android.systemui.recents.RecentsImplementation;
+import com.android.systemui.recents.RecentsModule;
 import com.android.systemui.rotationlock.RotationLockModule;
 import com.android.systemui.rotationlock.RotationLockNewModule;
 import com.android.systemui.scene.SceneContainerFrameworkModule;
@@ -85,11 +92,14 @@ import com.android.systemui.statusbar.notification.collection.render.GroupMember
 import com.android.systemui.statusbar.NotificationLockscreenUserManager;
 import com.android.systemui.statusbar.NotificationLockscreenUserManagerImpl;
 import com.android.systemui.statusbar.NotificationShadeWindowController;
+import com.android.systemui.statusbar.dagger.StartCentralSurfacesModule;
+import com.android.systemui.statusbar.notification.dagger.ReferenceNotificationsModule;
+import com.android.systemui.statusbar.notification.headsup.HeadsUpModule;
 import com.android.systemui.statusbar.phone.DozeServiceHost;
 import com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragmentStartableModule;
-import com.android.systemui.statusbar.phone.HeadsUpModule;
 import com.android.systemui.statusbar.phone.KeyguardBypassController;
 import com.android.systemui.statusbar.phone.StatusBarKeyguardViewManager;
+import com.android.systemui.statusbar.phone.dagger.StatusBarPhoneModule;
 import com.android.systemui.statusbar.policy.AccessibilityManagerWrapper;
 import com.android.systemui.statusbar.policy.AospPolicyModule;
 import com.android.systemui.statusbar.policy.ConfigurationController;
@@ -104,6 +114,7 @@ import com.android.systemui.SystemUIInitializer;
 import com.android.systemui.toast.ToastModule;
 import com.android.systemui.unfold.SysUIUnfoldStartableModule;
 import com.android.systemui.unfold.UnfoldTransitionModule;
+import com.android.systemui.util.kotlin.SysUICoroutinesModule;
 import com.android.systemui.volume.dagger.VolumeModule;
 import com.android.systemui.wallpapers.dagger.WallpaperModule;
 import com.android.systemui.wallpapers.dagger.WallpaperModule; 
@@ -126,7 +137,7 @@ import com.google.android.systemui.NotificationLockscreenUserManagerGoogle;
 import com.google.android.systemui.assist.AssistManagerGoogle;
 import com.google.android.systemui.assist.dagger.AssistModule;
 import com.google.android.systemui.columbus.dagger.ColumbusModule;
-import com.google.android.systemui.controls.GoogleControlsTileResourceConfigurationImpl;
+import com.google.android.systemui.controls.controller.GoogleControlsTileResourceConfigurationImpl;
 import com.google.android.systemui.dreamliner.DockObserver;
 import com.google.android.systemui.dreamliner.dagger.DreamlinerModule;
 import com.google.android.systemui.power.dagger.PowerModuleGoogle;
@@ -137,6 +148,7 @@ import com.google.android.systemui.reversecharging.ReverseChargingController;
 import com.google.android.systemui.reversecharging.dagger.ReverseChargingModule;
 import com.google.android.systemui.smartspace.BcSmartspaceDataProvider;
 import com.google.android.systemui.smartspace.dagger.SmartspaceGoogleModule;
+import com.google.android.systemui.statusbar.dagger.CentralSurfacesGoogleModule;
 import com.google.android.systemui.statusbar.dagger.StartCentralSurfacesGoogleModule;
 import com.google.android.systemui.statusbar.KeyguardIndicationControllerGoogle;
 import com.google.android.systemui.statusbar.policy.BatteryControllerImplGoogle;
@@ -154,10 +166,15 @@ import dagger.Lazy;
 @Module(includes = {
         AccessibilityModule.class,
         AccessibilityRepositoryModule.class,
+        ClipboardOverlayOverrideModule.class,
         CollapsedStatusBarFragmentStartableModule.class,
         ConnectingDisplayViewModel.StartableModule.class,
+        ContextualEducationModule.class,
+        DefaultBlueprintModule.class,
+        EmergencyGestureModule.class,
         GestureModule.class,
         HeadsUpModule.class,
+        KeyguardModule.class,
         KeyboardShortcutsModule.class,
         KeyguardBlueprintModule.class,
         KeyguardSectionsModule.class,
@@ -167,13 +184,18 @@ import dagger.Lazy;
         NavigationBarControllerModule.class,
         NearbyMediaDevicesManager.StartableModule.class,
         RearDisplayModule.class,
+        RecentsModule.class,
+        ReferenceNotificationsModule.class,
         ReferenceScreenshotModule.class,
         RotationLockModule.class,
         RotationLockNewModule.class,
         ScreenDecorationsModule.class,
         SystemActionsModule.class,
         ShadeModule.class,
+        ShortcutHelperModule.class,
         SceneContainerFrameworkModule.class,
+        StatusBarPhoneModule.class,
+        SysUICoroutinesModule.class,
         SysUIUnfoldStartableModule.class,
         UnfoldTransitionModule.Startables.class,
         ToastModule.class,
@@ -183,6 +205,7 @@ import dagger.Lazy;
         GoogleQSModule.class,
         PowerModuleGoogle.class,
         QSModuleGoogle.class,
+        CentralSurfacesGoogleModule.class,
         StartCentralSurfacesGoogleModule.class,
         StatusBarEventsModule.class,
         SmartspaceGoogleModule.class,

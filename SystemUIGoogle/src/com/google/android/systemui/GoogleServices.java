@@ -23,8 +23,6 @@ import com.google.android.systemui.input.TouchContextService;
 import com.google.android.systemui.columbus.ColumbusContext;
 import com.google.android.systemui.columbus.ColumbusServiceWrapper;
 
-import dagger.Lazy;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -38,8 +36,7 @@ public class GoogleServices extends VendorServices {
     private final ActivityStarter mActivityStarter;
     private final AlarmManager mAlarmManager;
     private final Lazy<ColumbusServiceWrapper> mColumbusServiceLazy;
-    private final Lazy<Handler> mBgHandler;
-    private final Lazy<Handler> mMainHandler;
+    private final Handler mBgHandler;
     private final NotificationShadeWindowView mNotificationShadeWindowView;
     private final PowerInteractor mPowerInteractor;
     private final SelectedUserInteractor mSelectedUserInteractor;
@@ -57,8 +54,7 @@ public class GoogleServices extends VendorServices {
             SelectedUserInteractor selectedUserInteractor,
             ShadeViewController shadeViewController,
             WakeLockLogger wakeLockLogger,
-            @Background Lazy<Handler> bgHandler,
-            @Main Lazy<Handler> mainHandler) {
+            @Background Handler bgHandler) {
         super();
         mContext = context;
         mActivityStarter = activityStarter;
@@ -71,7 +67,6 @@ public class GoogleServices extends VendorServices {
         mShadeViewController = shadeViewController;
         mWakelockLogger = wakeLockLogger;
         mBgHandler = bgHandler;
-        mMainHandler = mainHandler;
     }
 
     @Override
@@ -87,7 +82,7 @@ public class GoogleServices extends VendorServices {
                         mNotificationShadeWindowView.findViewById(
                                 R.id.ambient_indication_container);
         ambientIndicationContainer.initializeView(
-                mShadeViewController, mPowerInteractor, mActivityStarter, mWakelockLogger, mBgHandler, mMainHandler);
+                mShadeViewController, mPowerInteractor, mActivityStarter, mWakelockLogger, mBgHandler);
         addService(
                 new AmbientIndicationService(mContext, ambientIndicationContainer, mSelectedUserInteractor, mAlarmManager));
     }

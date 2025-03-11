@@ -61,6 +61,7 @@ import com.android.systemui.settings.UserTracker;
 import com.android.systemui.statusbar.KeyguardIndicationController;
 import com.android.systemui.statusbar.phone.KeyguardBypassController;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
+import com.android.systemui.user.domain.interactor.UserLogoutInteractor;
 import com.android.systemui.util.DeviceConfigProxy;
 import com.android.systemui.util.concurrency.DelayableExecutor;
 import com.android.systemui.util.wakelock.WakeLock;
@@ -81,7 +82,7 @@ public class KeyguardIndicationControllerGoogle extends KeyguardIndicationContro
     private AdaptiveChargingManager mAdaptiveChargingManager;
     @VisibleForTesting
     private AdaptiveChargingManager.AdaptiveChargingStatusReceiver mAdaptiveChargingStatusReceiver;
-    private int mBatteryLevel;
+    private int mBatteryLevel = -1;
     private final BroadcastDispatcher mBroadcastDispatcher;
     private final BroadcastReceiver mBroadcastReceiver;
     private final Context mContext;
@@ -143,13 +144,14 @@ public class KeyguardIndicationControllerGoogle extends KeyguardIndicationContro
             KeyguardInteractor keyguardInteractor,
             BiometricMessageInteractor biometricMessageInteractor,
             DeviceEntryFingerprintAuthInteractor deviceEntryFingerprintAuthInteractor,
-            DeviceEntryFaceAuthInteractor deviceEntryFaceAuthInteractor) {
+            DeviceEntryFaceAuthInteractor deviceEntryFaceAuthInteractor,
+            UserLogoutInteractor userLogoutInteractor) {
         super(context, mainLooper, wakeLockBuilder, keyguardStateController, statusBarStateController, keyguardUpdateMonitor,
             dockManager, broadcastDispatcher, devicePolicyManager, iBatteryStats, userManager, executor, bgExecutor,
             falsingManager, authController, lockPatternUtils, screenLifecycle, keyguardBypassController,
             accessibilityManager, faceHelpMessageDeferral, keyguardLogger, alternateBouncerInteractor, alarmManager, userTracker, bouncerMessageInteractor,
             featureFlags, indicationHelper, keyguardInteractor, biometricMessageInteractor,
-            deviceEntryFingerprintAuthInteractor, deviceEntryFaceAuthInteractor);
+            deviceEntryFingerprintAuthInteractor, deviceEntryFaceAuthInteractor, userLogoutInteractor);
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public final void onReceive(Context context, Intent intent) {

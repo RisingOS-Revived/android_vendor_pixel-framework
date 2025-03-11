@@ -16,20 +16,29 @@
 
 package com.google.android.systemui.statusbar.dagger;
 
+import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.emergency.EmergencyGestureModule;
 import com.android.systemui.statusbar.notification.dagger.NotificationsModule;
 import com.android.systemui.statusbar.notification.row.NotificationRowModule;
+import com.android.systemui.statusbar.phone.CentralSurfaces;
 import com.android.systemui.statusbar.phone.StatusBarNotificationPresenterModule;
 import com.android.systemui.statusbar.dagger.CentralSurfacesDependenciesModule;
 
-import com.google.android.systemui.statusbar.phone.dagger.StatusBarPhoneModule;
+import com.google.android.systemui.statusbar.phone.CentralSurfacesGoogle;
 
+import dagger.Binds;
 import dagger.Module;
 
 /** */
 @Module(includes = {CentralSurfacesDependenciesModule.class,
-        StatusBarNotificationPresenterModule.class, StatusBarPhoneModule.class, 
+        StatusBarNotificationPresenterModule.class,
         NotificationsModule.class, NotificationRowModule.class,
         EmergencyGestureModule.class})
 public interface CentralSurfacesGoogleModule {
+    /**
+     * Provides our instance of CentralSurfaces which is considered optional.
+     */
+    @Binds
+    @SysUISingleton
+    CentralSurfaces bindsCentralSurfaces(CentralSurfacesGoogle centralSurfacesGoogle);
 }
