@@ -34,7 +34,7 @@ import com.android.systemui.animation.Expandable;
 import com.android.systemui.dagger.qualifiers.Background;
 import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.Prefs;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
@@ -179,7 +179,7 @@ public class ReverseChargingTile extends QSTileImpl<QSTile.BooleanState> impleme
         if (mOverHeat) {
             str = mContext.getString(R.string.too_hot_label);
         } else if (mPowerSave) {
-            str = mContext.getString(R.string.quick_settings_dark_mode_secondary_label_battery_saver);
+            str = mContext.getString(com.android.systemui.res.R.string.quick_settings_dark_mode_secondary_label_battery_saver);
         } else if (isWirelessCharging) {
             str = mContext.getString(R.string.wireless_charging_label);
         } else {

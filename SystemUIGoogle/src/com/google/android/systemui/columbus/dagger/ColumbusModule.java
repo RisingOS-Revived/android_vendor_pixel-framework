@@ -45,9 +45,9 @@ import com.android.systemui.settings.UserTracker;
 import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.NotificationShadeWindowController;
 import com.android.systemui.statusbar.commandline.CommandRegistry;
-import com.android.systemui.statusbar.notification.HeadsUpManagerPhone;
+import com.android.systemui.statusbar.notification.headsup.HeadsUpManager;
+import com.android.systemui.statusbar.notification.headsup.HeadsUpModule;
 import com.android.systemui.statusbar.phone.StatusBarKeyguardViewManager;
-import com.android.systemui.statusbar.phone.HeadsUpModule;
 import com.android.systemui.statusbar.policy.DeviceProvisionedController;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.telephony.TelephonyListenerManager;
@@ -104,7 +104,7 @@ import com.google.android.systemui.columbus.sensors.config.LowSensitivitySetting
 import com.google.android.systemui.columbus.sensors.config.SensorConfiguration;
 import com.google.android.systemui.statusbar.phone.CentralSurfacesGoogle;
 
-import com.google.android.systemui.statusbar.phone.dagger.StatusBarPhoneModule;
+import com.android.systemui.statusbar.phone.dagger.StatusBarPhoneModule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -336,7 +336,7 @@ public class ColumbusModule {
 
     @Provides
     @SysUISingleton
-    static com.google.android.systemui.columbus.actions.UnpinNotifications provideUnpinNotificationsColumbus(Context context, SilenceAlertsDisabled silenceAlertsDisabled, Optional<HeadsUpManagerPhone> optional) {
+    static com.google.android.systemui.columbus.actions.UnpinNotifications provideUnpinNotificationsColumbus(Context context, SilenceAlertsDisabled silenceAlertsDisabled, Optional<HeadsUpManager> optional) {
         return new com.google.android.systemui.columbus.actions.UnpinNotifications(context, silenceAlertsDisabled, optional);
     }
 

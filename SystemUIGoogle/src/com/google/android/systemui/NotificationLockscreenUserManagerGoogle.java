@@ -26,6 +26,7 @@ import com.android.systemui.broadcast.BroadcastDispatcher;
 import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.dagger.qualifiers.Background;
 import com.android.systemui.dagger.qualifiers.Main;
+import com.android.systemui.deviceentry.domain.interactor.DeviceUnlockedInteractor;
 import com.android.systemui.dump.DumpManager;
 import com.android.systemui.flags.FeatureFlags;
 import com.android.systemui.flags.FeatureFlagsClassic;
@@ -73,10 +74,12 @@ public final class NotificationLockscreenUserManagerGoogle extends NotificationL
             LockPatternUtils lockPatternUtils,
             FeatureFlagsClassic featureFlags,
             Lazy<KeyguardBypassController> keyguardBypassController,
-            SmartSpaceController smartSpaceController) {
+            SmartSpaceController smartSpaceController,
+            Lazy<DeviceUnlockedInteractor> deviceUnlockedInteractor) {
         super(context, broadcastDispatcher, devicePolicyManager, userManager, userTracker, visibilityProviderLazy,
             commonNotifCollectionLazy, clickNotifier, overviewProxyServiceLazy, keyguardManager, statusBarStateController,
-            mainExecutor, backgroundExecutor, deviceProvisionedController, keyguardStateController, secureSettings, dumpManager, lockPatternUtils, featureFlags);
+            mainExecutor, backgroundExecutor, deviceProvisionedController, keyguardStateController, secureSettings, dumpManager, lockPatternUtils, featureFlags,
+            deviceUnlockedInteractor);
         KeyguardStateController.Callback callback = new KeyguardStateController.Callback() {
             public void onKeyguardShowingChanged() {
                 NotificationLockscreenUserManagerGoogle.this.updateSmartSpaceVisibilitySettings();

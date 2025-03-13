@@ -4,7 +4,7 @@ import android.app.AlarmManager;
 import android.content.Context;
 import android.os.Handler;
 
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.Dumpable;
 import com.android.systemui.VendorServices;
 import com.android.systemui.dagger.SysUISingleton;
@@ -23,6 +23,7 @@ import com.google.android.systemui.input.TouchContextService;
 import com.google.android.systemui.columbus.ColumbusContext;
 import com.google.android.systemui.columbus.ColumbusServiceWrapper;
 
+import dagger.Lazy;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 

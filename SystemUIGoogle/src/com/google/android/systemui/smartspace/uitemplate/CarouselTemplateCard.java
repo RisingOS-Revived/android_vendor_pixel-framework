@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.Constraints;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.google.android.systemui.smartspace.BcSmartSpaceUtil;
 import com.google.android.systemui.smartspace.BcSmartspaceCardSecondary;
@@ -33,7 +33,7 @@ public class CarouselTemplateCard extends BcSmartspaceCardSecondary {
         for (int i = 0; i < getChildCount(); i++) {
             View childAt = getChildAt(i);
             BcSmartspaceTemplateDataUtils.updateVisibility(childAt.findViewById(R.id.upper_text), 8);
-            BcSmartspaceTemplateDataUtils.updateVisibility(childAt.findViewById(R.id.icon), 8);
+            BcSmartspaceTemplateDataUtils.updateVisibility(childAt.findViewById(com.android.systemui.res.R.id.icon), 8);
             BcSmartspaceTemplateDataUtils.updateVisibility(childAt.findViewById(R.id.lower_text), 8);
         }
     }
@@ -133,7 +133,7 @@ public class CarouselTemplateCard extends BcSmartspaceCardSecondary {
             }
             for (int i5 = 0; i5 < intExact; i5++) {
                 TextView textView = (TextView) getChildAt(i5).findViewById(R.id.upper_text);
-                ImageView imageView = (ImageView) getChildAt(i5).findViewById(R.id.icon);
+                ImageView imageView = (ImageView) getChildAt(i5).findViewById(com.android.systemui.res.R.id.icon);
                 TextView textView2 = (TextView) getChildAt(i5).findViewById(R.id.lower_text);
                 BcSmartspaceTemplateDataUtils.setText(textView, ((CarouselTemplateData.CarouselItem) carouselItems.get(i5)).getUpperText());
                 BcSmartspaceTemplateDataUtils.updateVisibility(textView, 0);

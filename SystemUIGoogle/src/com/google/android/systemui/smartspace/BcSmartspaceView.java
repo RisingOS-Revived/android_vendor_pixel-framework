@@ -25,7 +25,7 @@ import android.widget.FrameLayout;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.viewpager.widget.ViewPager;
 import com.android.systemui.Dependency;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.android.systemui.plugins.FalsingManager;
 import com.google.android.systemui.smartspace.CardPagerAdapter;

@@ -8,7 +8,7 @@ import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 
 public class PageIndicator extends LinearLayout {
     public int mCurrentPageIndex;

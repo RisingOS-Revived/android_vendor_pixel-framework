@@ -44,7 +44,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.android.systemui.Dependency;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.app.animation.Interpolators;
 import com.android.systemui.assist.AssistManager;
 import com.android.systemui.navigationbar.views.buttons.ButtonInterface;
@@ -144,7 +144,7 @@ public class OpaLayout extends FrameLayout implements ButtonInterface {
         mWhiteCutout = (ImageView) findViewById(R.id.white_cutout);
         mHalo = (ImageView) findViewById(R.id.halo);
         mHome = (KeyButtonView) findViewById(R.id.home_button);
-        mHalo.setImageDrawable(KeyButtonDrawable.create(new ContextThemeWrapper(getContext(), R.style.DualToneLightTheme), new ContextThemeWrapper(getContext(), R.style.DualToneDarkTheme), R.drawable.halo, true, null));
+        mHalo.setImageDrawable(KeyButtonDrawable.create(new ContextThemeWrapper(getContext(), com.android.systemui.res.R.style.DualToneLightTheme), new ContextThemeWrapper(getContext(), com.android.systemui.res.R.style.DualToneDarkTheme), R.drawable.halo, true, null));
         mHomeDiameter = mResources.getDimensionPixelSize(R.dimen.opa_disabled_home_diameter);
         Paint paint = new Paint();
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));

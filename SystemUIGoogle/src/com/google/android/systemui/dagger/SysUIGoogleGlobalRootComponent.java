@@ -19,7 +19,7 @@ package com.google.android.systemui.dagger;
 import com.android.systemui.dagger.GlobalModule;
 import com.android.systemui.dagger.GlobalRootComponent;
 import com.android.systemui.dagger.qualifiers.InstrumentationTest;
-import com.android.systemui.dagger.WMComponent;
+import com.android.wm.shell.dagger.WMComponent;
 
 import javax.inject.Singleton;
 

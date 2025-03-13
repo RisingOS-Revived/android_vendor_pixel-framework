@@ -36,7 +36,7 @@ import com.android.systemui.statusbar.StatusBarState
 import com.android.systemui.util.wakelock.DelayedWakeLock
 import com.android.systemui.util.wakelock.WakeLock
 import com.android.systemui.util.wakelock.WakeLockLogger
-import com.android.systemui.res.R
+import com.google.android.systemui.res.R
 import dagger.Lazy
 
 class AmbientIndicationContainer(private val context: Context, attrs: AttributeSet) :
@@ -315,7 +315,7 @@ class AmbientIndicationContainer(private val context: Context, attrs: AttributeS
   }
 
   private fun updateSpacing() {
-    val marginBottom = resources.getDimensionPixelSize(R.dimen.ambient_indication_margin_bottom)
+    val marginBottom = resources.getDimensionPixelSize(com.android.systemui.res.R.dimen.ambient_indication_margin_bottom)
     if (bottomMarginPx != marginBottom) {
       bottomMarginPx = marginBottom
       (layoutParams as FrameLayout.LayoutParams).bottomMargin = bottomMarginPx

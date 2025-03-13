@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Log
 
 import com.android.systemui.statusbar.notification.collection.NotificationEntry
-import com.android.systemui.statusbar.notification.HeadsUpManagerPhone
-import com.android.systemui.statusbar.policy.OnHeadsUpChangedListener
+import com.android.systemui.statusbar.notification.headsup.HeadsUpManager
+import com.android.systemui.statusbar.notification.headsup.OnHeadsUpChangedListener
 
 import com.google.android.systemui.columbus.gates.Gate
 import com.google.android.systemui.columbus.gates.SilenceAlertsDisabled
@@ -16,7 +16,7 @@ import java.util.Optional
 class UnpinNotifications(
     context: Context,
     private val silenceAlertsDisabled: SilenceAlertsDisabled,
-    optionalHeadsUpManager: Optional<HeadsUpManagerPhone>
+    optionalHeadsUpManager: Optional<HeadsUpManager>
 ) : Action(context, null, 2, null) {
 
     companion object {
@@ -26,7 +26,7 @@ class UnpinNotifications(
     private val gateListener: Gate.Listener
     private var hasPinnedHeadsUp = false
     private val headsUpChangedListener: OnHeadsUpChangedListener
-    private val headsUpManager: HeadsUpManagerPhone?
+    private val headsUpManager: HeadsUpManager?
 
     init {
         val headsUpManagerOpt = optionalHeadsUpManager.orElse(null)

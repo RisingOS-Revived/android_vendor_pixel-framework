@@ -39,7 +39,7 @@ import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.keyguard.KeyguardUpdateMonitorCallback;
 import com.android.keyguard.logging.KeyguardLogger;
 import com.android.settingslib.fuelgauge.BatteryStatus;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.biometrics.AuthController;
 import com.android.systemui.biometrics.FaceHelpMessageDeferralFactory;
 import com.android.systemui.broadcast.BroadcastDispatcher;

@@ -6,7 +6,7 @@ import android.util.AttributeSet;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
-import com.android.wm.shell.R;
+import com.google.android.systemui.res.R;
 
 public class PromptView extends TextView {
     private final DecelerateInterpolator mDecelerateInterpolator;

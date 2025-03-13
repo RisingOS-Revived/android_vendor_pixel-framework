@@ -23,7 +23,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import java.util.ArrayList;
 import java.util.HashSet;

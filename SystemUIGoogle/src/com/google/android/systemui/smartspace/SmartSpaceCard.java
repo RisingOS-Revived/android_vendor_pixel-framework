@@ -24,7 +24,7 @@ import android.graphics.BitmapFactory;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.smartspace.nano.SmartspaceProto;
 
 public final class SmartSpaceCard {
@@ -107,7 +107,7 @@ public final class SmartSpaceCard {
             } else {
                 cardIcon = null;
             }
-            int dimensionPixelSize = context.getResources().getDimensionPixelSize(R.dimen.header_icon_size);
+            int dimensionPixelSize = context.getResources().getDimensionPixelSize(com.android.systemui.res.R.dimen.header_icon_size);
             if (cardIcon != null && cardIcon.getHeight() > dimensionPixelSize) {
                 cardIcon = Bitmap.createScaledBitmap(cardIcon, (dimensionPixelSize / cardIcon.getHeight()) * cardIcon.getWidth(), dimensionPixelSize, true);
             }

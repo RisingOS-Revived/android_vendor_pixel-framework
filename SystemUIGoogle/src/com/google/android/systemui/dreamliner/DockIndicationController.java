@@ -32,7 +32,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.shade.NotificationShadeWindowView;
 import com.android.systemui.statusbar.KeyguardIndicationController;
@@ -190,7 +190,7 @@ public class DockIndicationController implements StatusBarStateController.StateL
         mPromoText = textView;
         textView.setAutoSizeTextTypeUniformWithConfiguration(10, 16, 1, 2);
         notificationShadeWindowView.findViewById(R.id.ambient_indication).addOnAttachStateChangeListener(this);
-        mTopIndicationView = (KeyguardIndicationTextView) notificationShadeWindowView.findViewById(R.id.keyguard_indication_text);
+        mTopIndicationView = (KeyguardIndicationTextView) notificationShadeWindowView.findViewById(com.android.systemui.res.R.id.keyguard_indication_text);
         mIconViewsValidated = true;
     }
 

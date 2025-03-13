@@ -20,7 +20,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.util.AttributeSet;
 import android.util.MathUtils;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.systemui.assist.ui.CornerPathRenderer;
 import com.android.systemui.assist.ui.InvocationLightsView;
 import com.android.systemui.assist.ui.PathSpecCornerPathRenderer;

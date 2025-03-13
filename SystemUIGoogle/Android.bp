@@ -1,14 +1,26 @@
 android_library {
+    name: "SystemUIGoogle-res",
+    manifest: "AndroidManifest-res.xml",
+    use_resource_processor: true,
+    resource_dirs: [
+        "res",
+    ],
+    static_libs: [
+        "SystemUI-core",
+    ],
+}
+
+android_library {
     name: "SystemUIGoogle-core",
     srcs: [
         "src/**/*.kt",
         "src/**/*.java",
         "src/**/*.aidl",
     ],
-    resource_dirs: [
-        "res",
-    ],
+    use_resource_processor: true,
+    resource_dirs: [],
     static_libs: [
+        "SystemUIGoogle-res",
         "SystemUI-core",
         "tensorflowlite_java",
         "android.frameworks.stats-V1-java",
@@ -51,6 +63,7 @@ android_app {
     overrides: [
         "SystemUI",
     ],
+    use_resource_processor: true,
     resource_dirs: [],
     asset_dirs: ["assets"],
     aaptflags: [

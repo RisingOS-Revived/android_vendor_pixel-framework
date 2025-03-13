@@ -20,6 +20,7 @@ package com.google.android.systemui.dagger
 import com.android.systemui.dagger.*
 import com.android.systemui.keyguard.CustomizationProvider
 import com.android.systemui.people.PeopleProvider
+import com.android.systemui.qs.composefragment.dagger.QSFragmentComposeModule
 import com.android.systemui.statusbar.NotificationInsetsModule
 import com.android.systemui.statusbar.QsFrameTranslateModule
 import com.android.systemui.SystemUIAppComponentFactoryBase
@@ -40,7 +41,8 @@ import dagger.Subcomponent
         SystemUIGoogleBinder::class,
         SystemUIModule::class,
         SystemUIGoogleCoreStartableModule::class,
-        SystemUIGoogleModule::class
+        SystemUIGoogleModule::class,
+        QSFragmentComposeModule::class
     ]
 )
 interface SysUIGoogleSysUIComponent : SysUIComponent {

@@ -33,7 +33,7 @@ import android.widget.TextView;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.app.animation.Interpolators;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.statusbar.CrossFadeHelper;

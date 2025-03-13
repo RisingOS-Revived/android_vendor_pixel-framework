@@ -18,7 +18,7 @@ package com.google.android.systemui.dreamliner;
 
 import android.content.Context;
 import android.text.TextUtils;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 
 public final class DreamlinerUtils {
     public static WirelessCharger getInstance(Context context) {

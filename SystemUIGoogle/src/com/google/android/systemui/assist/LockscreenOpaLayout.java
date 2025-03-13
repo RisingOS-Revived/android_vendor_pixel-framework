@@ -29,7 +29,7 @@ import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
 
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.app.animation.Interpolators;
 
 import java.util.ArrayList;

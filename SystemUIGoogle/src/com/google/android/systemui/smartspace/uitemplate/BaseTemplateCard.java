@@ -17,7 +17,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import com.android.launcher3.icons.GraphicsUtils;
-import com.android.systemui.res.R;
+import com.google.android.systemui.res.R;
 import com.android.app.animation.Interpolators;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.google.android.systemui.smartspace.BcSmartSpaceUtil;
@@ -294,7 +294,7 @@ public class BaseTemplateCard extends ConstraintLayout {
         super.onFinishInflate();
         this.mTextGroup = (ViewGroup) findViewById(R.id.text_group);
         this.mSecondaryCardPane = (ViewGroup) findViewById(R.id.secondary_card_group);
-        this.mDateView = (IcuDateTextView) findViewById(R.id.date);
+        this.mDateView = (IcuDateTextView) findViewById(com.android.systemui.res.R.id.date);
         this.mTitleTextView = (DoubleShadowTextView) findViewById(R.id.title_text);
         this.mSubtitleTextView = (DoubleShadowTextView) findViewById(R.id.subtitle_text);
         this.mSubtitleSupplementalView = (DoubleShadowTextView) findViewById(R.id.base_action_icon_subtitle);
