@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?><manifest 
+<?xml version="1.0" encoding="utf-8" standalone="no"?><manifest
 xmlns:tools="http://schemas.android.com/tools"
 xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" android:sharedUserId="android.uid.system" coreApp="true" package="com.android.settings" platformBuildVersionCode="35" platformBuildVersionName="15">
     <permission android:name="com.google.android.settings.routines.ROUTINES_ACTIONS"
@@ -167,7 +167,9 @@ xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVer
     </queries>
     <permission android:name="com.android.settings.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="com.android.settings.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
-    <application android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:backupAgent="com.android.settings.backup.SettingsBackupHelper" android:defaultToDeviceProtectedStorage="true" android:directBootAware="true" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="true" android:gwpAsanMode="always" android:hardwareAccelerated="true" android:icon="@drawable/ic_launcher_settings" android:label="@string/settings_label" android:name="com.google.android.settings.SettingsGoogleApplication" android:requiredForAllUsers="true" android:supportsRtl="true" android:theme="@style/Theme.Settings" android:usesCleartextTraffic="true" android:usesNonSdkApi="true">
+
+    <application android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:backupAgent="com.android.settings.backup.SettingsBackupHelper" android:defaultToDeviceProtectedStorage="true" android:directBootAware="true" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="true" android:gwpAsanMode="always" android:hardwareAccelerated="true" android:icon="@drawable/ic_launcher_settings" android:label="@string/settings_label" android:name="com.google.android.settings.generalaccess.SettingsGoogleGeneralAccessApplication" android:requiredForAllUsers="true" android:restoreAnyVersion="true" android:supportsRtl="true" android:theme="@style/Theme.Settings" android:usesCleartextTraffic="true" android:usesNonSdkApi="true">
+
         <uses-library android:name="org.apache.http.legacy" android:required="true"/>
         <uses-library android:name="androidx.window.extensions" android:required="false"/>
         <uses-library android:name="androidx.window.sidecar" android:required="false"/>
@@ -343,6 +345,20 @@ xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVer
         <provider android:authorities="com.google.android.settings.AdvancedVpnContentProvider" android:exported="true" android:multiprocess="false" android:name="com.google.android.settings.vpn2.AdvancedVpnContentProvider" android:permission="com.google.android.wildlife.permission.ADVANCED_VPN_CONFIG"/>
         <provider android:authorities="com.android.settings.spa.search.provider" android:enabled="true" android:exported="false" android:name="com.android.settingslib.spa.search.SpaSearchProvider"/>
         <provider android:authorities="com.google.android.settings.bugreport.DumpDataContentProvider" android:exported="false" android:name="com.google.android.settings.bugreport.DumpDataContentProvider"/>
+        <provider android:authorities="com.google.android.settings.accessibility.provider.adaptive_vibration" android:exported="true" android:multiprocess="false" android:name="com.google.android.settings.accessibility.AdaptiveVibrationContentProvider" android:permission="com.google.android.settings.accessibility.ADAPTIVE_VIBRATION"/>
+        <provider android:authorities="com.android.settings.matcha.accessibilityappearanceprovider" android:exported="true" android:name="com.google.android.settings.simplemode.AccessibilityAppearanceProvider"/>
+        <activity android:excludeFromRecents="true" android:exported="true" android:launchMode="singleTask" android:name="com.google.android.settings.simplemode.SimpleModeSettingsActivity">
+            <intent-filter android:priority="1">
+                <action android:name="com.google.android.settings.matcha.ACCESSIBILITY_APPEARANCE_SETTINGS"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <meta-data android:name="com.android.settings.FRAGMENT_CLASS" android:value="com.google.android.settings.simplemode.SimpleModeSettingsFragment"/>
+        </activity>
+        <receiver android:exported="true" android:name="com.google.android.settings.simplemode.SimpleModeSetupWizardEventsReceiver">
+            <intent-filter>
+                <action android:name="com.google.android.setupwizard.SETUP_WIZARD_FINISHED"/>
+            </intent-filter>
+        </receiver>
         <receiver android:exported="true" android:name="com.android.settings.fuelgauge.batteryusage.BootBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
