@@ -1,3 +1,37 @@
+// Opt-out config for optimizing the SystemUI target using R8.
+// Disabled via `export SYSTEMUI_OPTIMIZE_JAVA=false`, or explicitly in Make via
+// `SYSTEMUI_OPTIMIZE_JAVA := false`.
+soong_config_module_type {
+    name: "systemuigoogle_optimized_java_defaults",
+    module_type: "java_defaults",
+    config_namespace: "ANDROID",
+    bool_variables: ["SYSTEMUI_OPTIMIZE_JAVA"],
+    properties: ["optimize"],
+}
+
+systemuigoogle_optimized_java_defaults {
+    name: "SystemUIGoogle_optimized_defaults",
+    soong_config_variables: {
+        SYSTEMUI_OPTIMIZE_JAVA: {
+            optimize: {
+                enabled: true,
+                optimize: true,
+                shrink: true,
+                shrink_resources: true,
+                optimized_shrink_resources: true,
+                ignore_warnings: false,
+                proguard_compatibility: false,
+            },
+            conditions_default: {
+                optimize: {
+                    ignore_warnings: false,
+                    proguard_compatibility: false,
+                },
+            },
+        },
+    },
+}
+
 android_library {
     name: "SystemUIGoogle-res",
     manifest: "AndroidManifest-res.xml",
@@ -35,13 +69,23 @@ android_library {
         "nga-lib",
         "columbus-lib",
         "androidx.concurrent_concurrent-futures-ktx",
+        "androidx.appsearch_appsearch",
+        "androidx.appsearch_appsearch-builtin-types",
+        "androidx.appsearch_appsearch-platform-storage",
+        "androidx.room_room-runtime",
+        "androidx.fragment_fragment-ktx",
+        "androidx.lifecycle_lifecycle-runtime-ktx",
     ],
     libs: [
         "keepanno-annotations",
     ],
     manifest: "AndroidManifest.xml",
     kotlincflags: ["-Xjvm-default=all"],
-    plugins: ["dagger2-compiler"],
+    plugins: [
+        "dagger2-compiler",
+        "androidx.room_room-compiler-plugin",
+        "androidx.appsearch_appsearch-compiler-plugin",
+    ],
     lint: {
         extra_check_modules: ["SystemUILintChecker"],
     },
@@ -51,6 +95,7 @@ android_app {
     name: "SystemUIGoogle",
     defaults: [
         "platform_app_defaults",
+        "SystemUIGoogle_optimized_defaults",
     ],
     static_libs: [
         "SystemUIGoogle-core",
@@ -70,16 +115,16 @@ android_app {
         "-0 .tflite",
         "-0 .vocab",
     ],
-
     platform_apis: true,
     system_ext_specific: true,
     certificate: "platform",
     privileged: true,
-
     kotlincflags: ["-Xjvm-default=all"],
-
     dxflags: ["--multi-dex"],
     optimize: {
+        shrink_resources: false,
+        optimized_shrink_resources: false,
+        proguard_compatibility: true,
         proguard_flags_files: ["proguard.flags"],
     },
     required: [

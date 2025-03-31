@@ -36,7 +36,7 @@ android_library {
     platform_apis: true,
 
     srcs: ["src/**/*.java"],
-    
+
     use_resource_processor: true,
     static_libs: [
         "Settings-core",
@@ -44,6 +44,26 @@ android_library {
         "android.frameworks.stats-V1-java",
         "vendor-pixelatoms-java",
         "SettingsGoogle-lib",
+        "androidx.datastore_datastore",
+        "androidx.datastore_datastore-core",
+        "androidx.datastore_datastore-preferences",
+        "androidx.datastore_datastore-core-okio",
+        "androidx.datastore_datastore-preferences-core",
+        "androidx.datastore_datastore-preferences-external-protobuf",
+        "androidx.datastore_datastore-preferences-rxjava2",
+        "com.google.android.material_material",
+        "androidx.room_room-runtime",
+        "androidx.fragment_fragment-ktx",
+        "androidx.lifecycle_lifecycle-runtime-ktx",
+        "kotlinx_coroutines_reactive",
+        "kotlinx_coroutines_rx2",
+        "rxjava",
+        "SpaLib",
+    ],
+    plugins: [
+        "SettingsLibMetadata-processor",
+        "androidx.room_room-compiler-plugin",
+        "androidx.appsearch_appsearch-compiler-plugin",
     ],
     resource_dirs: [
         "res",
@@ -56,6 +76,9 @@ android_app {
     defaults: [
         "platform_app_defaults",
         "SettingsGoogle_optimized_defaults",
+        "SettingsLib-search-defaults",
+        "SettingsLintDefaults",
+        "SpaPrivilegedLib-defaults",
     ],
     platform_apis: true,
     certificate: "platform",
@@ -68,6 +91,13 @@ android_app {
     static_libs: ["SettingsGoogle-core"],
     uses_libs: ["org.apache.http.legacy"],
     optimize: {
+        enabled: true,
+        optimize: true,
+        shrink: true,
+        shrink_resources: false,
+        optimized_shrink_resources: false,
+        ignore_warnings: false,
+        proguard_compatibility: true,
         proguard_flags_files: [
             ":Settings_proguard_flags",
             "proguard.flags",
