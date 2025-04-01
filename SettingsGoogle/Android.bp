@@ -96,7 +96,7 @@ android_app {
         shrink: true,
         shrink_resources: false,
         optimized_shrink_resources: false,
-        ignore_warnings: false,
+        ignore_warnings: true,
         proguard_compatibility: true,
         proguard_flags_files: [
             ":Settings_proguard_flags",
