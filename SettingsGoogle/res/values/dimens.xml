@@ -189,4 +189,5 @@
     <item name="face_preview_translate_x" type="dimen">-130.0</item>
     <item name="face_preview_translate_y" type="dimen">-460.0</item>
     <item name="suw_illustration_aspect_ratio" type="dimen">2.22</item>
+    <dimen name="udfps_lottie_translate_y">-500dp</dimen>
 </resources>

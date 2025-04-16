@@ -62,7 +62,7 @@ public class CardPagerAdapter extends PagerAdapter implements TunerService.Tunab
     public String mUiSurface;
     private boolean mClockStyleEnabled = false;
 
-    private static final String CLOCK_STYLE = "clock_style";
+    private static final String CLOCK_STYLE = "system:" + "clock_style";
 
     List<SmartspaceTarget> getTargets() {
         return this.mSmartspaceTargets;

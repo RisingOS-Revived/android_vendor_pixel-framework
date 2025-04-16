@@ -60,7 +60,6 @@ import com.android.systemui.keyguard.KeyguardUnlockAnimationController;
 import com.android.systemui.keyguard.KeyguardViewMediator;
 import com.android.systemui.keyguard.ScreenLifecycle;
 import com.android.systemui.keyguard.WakefulnessLifecycle;
-import com.android.systemui.model.SysUiState;
 import com.android.systemui.navigationbar.NavigationBarController;
 import com.android.systemui.notetask.NoteTaskController;
 import com.android.systemui.plugins.ActivityStarter;
@@ -264,6 +263,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             LockscreenShadeTransitionController lockscreenShadeTransitionController,
             FeatureFlags featureFlags,
             KeyguardUnlockAnimationController keyguardUnlockAnimationController,
+            @Main Handler mainHandler,
             @Main DelayableExecutor delayableExecutor,
             @Main MessageRouter messageRouter,
             WallpaperManager wallpaperManager,
@@ -277,12 +277,11 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             AlternateBouncerInteractor alternateBouncerInteractor,
             UserTracker userTracker,
             Provider<FingerprintManager> fingerprintManager,
-            ActivityStarter activityStarter,
             TunerService tunerService,
+            ActivityStarter activityStarter,
             BrightnessMirrorShowingInteractor brightnessMirrorShowingInteractor,
             GlanceableHubContainerController glanceableHubContainerController,
             EmergencyGestureIntentFactory emergencyGestureIntentFactory,
-            SysUiState sysUiState,
             ViewCaptureAwareWindowManager viewCaptureAwareWindowManager,
             BurnInProtectionController burnInProtectionController,
             Optional<ReverseChargingViewController> reverseChargingViewControllerOptional,
@@ -305,9 +304,9 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 pluginDependencyProvider, extensionController, userInfoControllerImpl, phoneStatusBarPolicy, keyguardIndicationControllerGoogle, demoModeController,
                 notificationShadeDepthControllerLazy, shadeTouchableRegionManager, brightnessSliderFactory,
                 screenOffAnimationController, wallpaperController, statusBarHideIconsForBouncerManager, lockscreenShadeTransitionController, featureFlags,
-                keyguardUnlockAnimationController, delayableExecutor, messageRouter, wallpaperManager, startingSurfaceOptional, activityTransitionAnimator,
+                keyguardUnlockAnimationController, mainHandler, delayableExecutor, messageRouter, wallpaperManager, startingSurfaceOptional, activityTransitionAnimator,
                 deviceStateManager, wiredChargingRippleController, dreamManager, cameraLauncherLazy, lightRevealScrim,
-                alternateBouncerInteractor, userTracker, fingerprintManager, activityStarter, tunerService, brightnessMirrorShowingInteractor,
+                alternateBouncerInteractor, userTracker, fingerprintManager, tunerService, activityStarter, brightnessMirrorShowingInteractor,
                 glanceableHubContainerController, emergencyGestureIntentFactory, viewCaptureAwareWindowManager, burnInProtectionController);
         mContext = context;
         mBatteryStateChangeCallback = new BatteryController.BatteryStateChangeCallback() {

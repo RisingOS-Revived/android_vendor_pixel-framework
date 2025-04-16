@@ -19,25 +19,6 @@ package org.pixelexperience.systemui.columbus;
 import android.os.SystemProperties;
 
 public class ColumbusCompatibilityHelper {
-    static {
-        configureApSensor();
-    }
-
-    private static void configureApSensor() {
-        boolean isPixelDevice = SystemProperties.get("ro.soc.manufacturer").equalsIgnoreCase("Google");
-        String model = SystemProperties.get("ro.product.model");
-        if (isPixelDevice && model != null) {
-            boolean isPixel4aOrNewer = model.matches("Pixel [4-9][a-zA-Z ]*");
-            if (isPixel4aOrNewer) {
-                try {
-                    SystemProperties.set("persist.columbus.use_ap_sensor", Boolean.toString(false));
-                } catch (RuntimeException e) {
-                    android.util.Log.e("ColumbusCompatibilityHelper", "Failed to set system property", e);
-                }
-            }
-        }
-    }
-
     public static boolean useApSensor() {
         return SystemProperties.getBoolean("persist.columbus.use_ap_sensor", true);
     }

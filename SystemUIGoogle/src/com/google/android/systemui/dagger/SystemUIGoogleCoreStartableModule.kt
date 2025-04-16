@@ -49,9 +49,10 @@ import com.android.systemui.power.PowerUI
 import com.android.systemui.reardisplay.RearDisplayDialogController
 import com.android.systemui.recents.Recents
 import com.android.systemui.ScreenDecorations
+import com.android.systemui.SliceBroadcastRelayHandler
 import com.android.systemui.settings.MultiUserUtilsModule
 import com.android.systemui.shortcut.ShortcutKeyDispatcher
-import com.android.systemui.SliceBroadcastRelayHandler
+import com.android.systemui.smartpixels.SmartPixelsReceiver
 import com.android.systemui.statusbar.gesture.GesturePointerEventListener
 import com.android.systemui.statusbar.ImmersiveModeConfirmation
 import com.android.systemui.statusbar.notification.headsup.StatusBarHeadsUpChangeListener
@@ -68,7 +69,6 @@ import com.android.systemui.volume.VolumeUI
 import com.android.systemui.wallpapers.dagger.WallpaperModule
 import com.android.systemui.wmshell.WMShell
 
-import com.google.android.systemui.theme.ThemeOverlayControllerGoogle
 import com.google.android.systemui.GoogleServices
 import com.google.android.systemui.smartspace.KeyguardSmartspaceStartable
 
@@ -77,7 +77,6 @@ import dagger.Module
 import dagger.multibindings.ClassKey
 import dagger.multibindings.IntoMap
 
-import com.android.systemui.smartpixels.SmartPixelsReceiver;
 
 /**
  * Collection of {@link CoreStartable}s that should be run on AOSP.
@@ -217,7 +216,7 @@ abstract class SystemUIGoogleCoreStartableModule {
     @Binds
     @IntoMap
     @ClassKey(ThemeOverlayController::class)
-    abstract fun bindThemeOverlayControllerGoogle(sysui: ThemeOverlayControllerGoogle): CoreStartable
+    abstract fun bindThemeOverlayController(sysui: ThemeOverlayController): CoreStartable
 
     /** Inject into MediaOutputSwitcherDialogUI.  */
     @Binds

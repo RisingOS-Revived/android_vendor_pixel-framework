@@ -107,6 +107,8 @@
     <dimen name="opa_diamond_translation">16.0dip</dimen>
     <item type="dimen" name="opa_disabled_home_diameter">@dimen/navigation_icon_size</item>
     <dimen name="opa_dot_diam">10.0dip</dimen>
+    <dimen name="opa_elmyra_orb_diameter">160.0dip</dimen>
+    <dimen name="opa_elmyra_orb_height">100.0dip</dimen>
     <dimen name="opa_line_x_trans_bg">30.0dip</dimen>
     <dimen name="opa_line_x_trans_ry">15.0dip</dimen>
     <dimen name="opa_line_y_translation">16.0dip</dimen>
