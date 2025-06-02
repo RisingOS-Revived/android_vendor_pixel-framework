@@ -16,13 +16,4 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <include
-        android:layout_width="0.0dip"
-        android:layout_height="fill_parent"
-        layout="@layout/smartspace_title_subtitle_pane"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/secondary_card_group"
-        app:layout_constraintTop_toTopOf="parent" />
-
 </com.google.android.systemui.smartspace.BcSmartspaceCard>
