@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Smartspace IDs -->
+    <item type="id" name="second_sub_card" />
+    <item type="id" name="temperature_value" />
+    <item type="id" name="weather_icon" />
+    <item type="id" name="timestamp" />
+    <item type="id" name="supplemental_line_text" />
+</resources>
