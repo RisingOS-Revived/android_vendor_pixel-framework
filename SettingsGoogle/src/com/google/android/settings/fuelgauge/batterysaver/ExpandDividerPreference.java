@@ -6,10 +6,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
-
 import com.android.settings.R;
 
-class ExpandDividerPreference extends Preference {
+public class ExpandDividerPreference extends Preference {
     static final String PREFERENCE_KEY = "expandable_divider";
     ImageView mImageView;
     private boolean mIsExpanded;
@@ -25,7 +24,7 @@ class ExpandDividerPreference extends Preference {
         this(context, null);
     }
 
-    ExpandDividerPreference(Context context, AttributeSet attributeSet) {
+    public ExpandDividerPreference(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         mIsExpanded = false;
         mTitleContent = null;
