@@ -7,13 +7,19 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.constraintlayout.widget.ConstraintLayout;
-import com.google.android.systemui.res.R;
+
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
+
 import com.google.android.systemui.smartspace.BcSmartspaceCardSecondary;
 import com.google.android.systemui.smartspace.BcSmartspaceTemplateDataUtils;
+import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggerUtil;
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggingInfo;
+import com.google.android.systemui.res.R;
+
 import java.util.List;
 
 public class CombinedCardsTemplateCard extends BcSmartspaceCardSecondary {
@@ -24,79 +30,127 @@ public class CombinedCardsTemplateCard extends BcSmartspaceCardSecondary {
         super(context);
     }
 
-    public CombinedCardsTemplateCard(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
+    public CombinedCardsTemplateCard(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void setTextColor(int i) {
-        if (this.mFirstSubCard.getChildCount() != 0) {
-            ((BcSmartspaceCardSecondary) this.mFirstSubCard.getChildAt(0)).setTextColor(i);
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        mFirstSubCard = findViewById(R.id.first_sub_card_container);
+        mSecondSubCard = findViewById(R.id.second_sub_card_container);
+    }
+
+    @Override
+    public void resetUi() {
+        BcSmartspaceTemplateDataUtils.updateVisibility(mFirstSubCard, View.GONE);
+        BcSmartspaceTemplateDataUtils.updateVisibility(mSecondSubCard, View.GONE);
+    }
+
+    @Override
+    public boolean setSmartspaceActions(
+            SmartspaceTarget target,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+            BcSmartspaceCardLoggingInfo loggingInfo) {
+        reset(target.getSmartspaceTargetId());
+
+        BaseTemplateData templateData = target.getTemplateData();
+        CombinedCardsTemplateData combinedData = (CombinedCardsTemplateData) templateData;
+
+        if (!BcSmartspaceCardLoggerUtil.containsValidTemplateType(combinedData)) {
+            Log.w(
+                    "CombinedCardsTemplateCard",
+                    "TemplateData is null or empty or invalid template type");
+            return false;
         }
-        if (this.mSecondSubCard.getChildCount() != 0) {
-            ((BcSmartspaceCardSecondary) this.mSecondSubCard.getChildAt(0)).setTextColor(i);
+
+        List<BaseTemplateData> cardDataList = combinedData.getCombinedCardDataList();
+        if (cardDataList.isEmpty()) {
+            Log.w(
+                    "CombinedCardsTemplateCard",
+                    "TemplateData is null or empty or invalid template type");
+            return false;
         }
-    }
 
-    public final void onFinishInflate() {
-        super/*android.view.ViewGroup*/.onFinishInflate();
-        this.mFirstSubCard = findViewById(R.id.first_sub_card_container);
-        this.mSecondSubCard = findViewById(R.id.second_sub_card_container);
-    }
+        BaseTemplateData firstCardData = cardDataList.get(0);
+        BaseTemplateData secondCardData = cardDataList.size() > 1 ? cardDataList.get(1) : null;
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void resetUi() {
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstSubCard, 8);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondSubCard, 8);
-    }
-
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final boolean setSmartspaceActions(SmartspaceTarget smartspaceTarget, BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
-        BaseTemplateData baseTemplateData;
-        CombinedCardsTemplateData templateData = (CombinedCardsTemplateData) smartspaceTarget.getTemplateData();
-        if (templateData != null && !templateData.getCombinedCardDataList().isEmpty()) {
-            List combinedCardDataList = templateData.getCombinedCardDataList();
-            BaseTemplateData baseTemplateData2 = (BaseTemplateData) combinedCardDataList.get(0);
-            if (combinedCardDataList.size() > 1) {
-                baseTemplateData = (BaseTemplateData) combinedCardDataList.get(1);
-            } else {
-                baseTemplateData = null;
-            }
-            if (!setupSubCard(this.mFirstSubCard, baseTemplateData2, smartspaceTarget, smartspaceEventNotifier, bcSmartspaceCardLoggingInfo)) {
-                return false;
-            }
-            if (baseTemplateData != null && !setupSubCard(this.mSecondSubCard, baseTemplateData, smartspaceTarget, smartspaceEventNotifier, bcSmartspaceCardLoggingInfo)) {
-                return false;
-            }
+        boolean firstCardSet =
+                setupSubCard(mFirstSubCard, firstCardData, target, eventNotifier, loggingInfo);
+        if (firstCardSet
+                && (secondCardData == null
+                        || setupSubCard(
+                                mSecondSubCard,
+                                secondCardData,
+                                target,
+                                eventNotifier,
+                                loggingInfo))) {
             return true;
         }
-        Log.w("CombinedCardsTemplateCard", "TemplateData is null or empty");
         return false;
     }
 
-    public final boolean setupSubCard(ConstraintLayout constraintLayout, BaseTemplateData baseTemplateData, SmartspaceTarget smartspaceTarget, BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
-        if (baseTemplateData == null) {
-            BcSmartspaceTemplateDataUtils.updateVisibility(constraintLayout, 8);
+    public boolean setupSubCard(
+            ViewGroup container,
+            BaseTemplateData templateData,
+            SmartspaceTarget target,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+            BcSmartspaceCardLoggingInfo loggingInfo) {
+        if (templateData == null) {
+            BcSmartspaceTemplateDataUtils.updateVisibility(container, View.GONE);
             Log.w("CombinedCardsTemplateCard", "Sub-card templateData is null or empty");
             return false;
         }
-        int secondaryCardRes = BcSmartspaceTemplateDataUtils.getSecondaryCardRes(baseTemplateData.getTemplateType());
-        if (secondaryCardRes == 0) {
-            BcSmartspaceTemplateDataUtils.updateVisibility(constraintLayout, 8);
+
+        Integer subCardResId =
+                BcSmartspaceTemplateDataUtils.TEMPLATE_TYPE_TO_SECONDARY_CARD_RES.get(
+                        templateData.getTemplateType());
+        if (subCardResId == null) {
+            BcSmartspaceTemplateDataUtils.updateVisibility(container, View.GONE);
             Log.w("CombinedCardsTemplateCard", "Combined sub-card res is null. Cannot set it up");
             return false;
         }
-        BcSmartspaceCardSecondary r0 = (BcSmartspaceCardSecondary) LayoutInflater.from(constraintLayout.getContext()).inflate(secondaryCardRes, (ViewGroup) constraintLayout, false);
-        r0.setSmartspaceActions(new SmartspaceTarget.Builder(smartspaceTarget.getSmartspaceTargetId(), smartspaceTarget.getComponentName(), smartspaceTarget.getUserHandle()).setTemplateData(baseTemplateData).build(), smartspaceEventNotifier, bcSmartspaceCardLoggingInfo);
-        constraintLayout.removeAllViews();
-        ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(-2, getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_card_height));
-        layoutParams.startToStart = 0;
-        layoutParams.endToEnd = 0;
-        layoutParams.topToTop = 0;
-        layoutParams.bottomToBottom = 0;
-        BcSmartspaceTemplateDataUtils.updateVisibility(r0, 0);
-        constraintLayout.addView(r0, layoutParams);
-        BcSmartspaceTemplateDataUtils.updateVisibility(constraintLayout, 0);
-        return true;
+
+        BcSmartspaceCardSecondary subCard =
+                (BcSmartspaceCardSecondary)
+                        LayoutInflater.from(container.getContext())
+                                .inflate(subCardResId, container, false);
+        SmartspaceTarget subCardTarget =
+                new SmartspaceTarget.Builder(
+                                target.getSmartspaceTargetId(),
+                                target.getComponentName(),
+                                target.getUserHandle())
+                        .setTemplateData(templateData)
+                        .build();
+
+        boolean success = subCard.setSmartspaceActions(subCardTarget, eventNotifier, loggingInfo);
+        container.removeAllViews();
+        ConstraintLayout.LayoutParams params =
+                new ConstraintLayout.LayoutParams(
+                        ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                        getResources()
+                                .getDimensionPixelSize(R.dimen.enhanced_smartspace_card_height));
+        params.startToStart = 0;
+        params.endToEnd = 0;
+        params.topToTop = 0;
+        params.bottomToBottom = 0;
+        BcSmartspaceTemplateDataUtils.updateVisibility(subCard, View.VISIBLE);
+        container.addView(subCard, params);
+        BcSmartspaceTemplateDataUtils.updateVisibility(container, View.VISIBLE);
+        return success;
+    }
+
+    @Override
+    public void setTextColor(int color) {
+        if (mFirstSubCard.getChildCount() > 0) {
+            BcSmartspaceCardSecondary firstSubCard =
+                    (BcSmartspaceCardSecondary) mFirstSubCard.getChildAt(0);
+            firstSubCard.setTextColor(color);
+        }
+        if (mSecondSubCard.getChildCount() > 0) {
+            BcSmartspaceCardSecondary secondSubCard =
+                    (BcSmartspaceCardSecondary) mSecondSubCard.getChildAt(0);
+            secondSubCard.setTextColor(color);
+        }
     }
 }

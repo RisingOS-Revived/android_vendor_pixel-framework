@@ -9,9 +9,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.google.android.systemui.res.R;
+
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
+
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggingInfo;
+import com.google.android.systemui.res.R;
 
 public class BcSmartspaceCardSports extends BcSmartspaceCardSecondary {
     public ImageView mFirstCompetitorLogo;
@@ -28,22 +30,7 @@ public class BcSmartspaceCardSports extends BcSmartspaceCardSecondary {
         super(context, attributeSet);
     }
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void resetUi() {
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSummaryView, 4);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorScore, 4);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorScore, 4);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorLogo, 4);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorLogo, 4);
-    }
-
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void setTextColor(int i) {
-        this.mSummaryView.setTextColor(i);
-        this.mFirstCompetitorScore.setTextColor(i);
-        this.mSecondCompetitorScore.setTextColor(i);
-    }
-
+    @Override
     public final void onFinishInflate() {
         super.onFinishInflate();
         this.mSummaryView = (TextView) findViewById(R.id.match_time_summary);
@@ -53,25 +40,33 @@ public class BcSmartspaceCardSports extends BcSmartspaceCardSecondary {
         this.mSecondCompetitorLogo = (ImageView) findViewById(R.id.second_competitor_logo);
     }
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final boolean setSmartspaceActions(SmartspaceTarget smartspaceTarget, BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
-        Bundle extras;
+    @Override
+    public final void resetUi() {
+        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSummaryView, 4);
+        BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorScore, 4);
+        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorScore, 4);
+        BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorLogo, 4);
+        BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorLogo, 4);
+    }
+
+    @Override
+    public final boolean setSmartspaceActions(
+            SmartspaceTarget smartspaceTarget,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier,
+            BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
         boolean z;
         SmartspaceAction baseAction = smartspaceTarget.getBaseAction();
-        if (baseAction == null) {
-            extras = null;
-        } else {
-            extras = baseAction.getExtras();
-        }
+        Bundle extras = baseAction == null ? null : baseAction.getExtras();
         if (extras == null) {
             return false;
         }
         if (extras.containsKey("matchTimeSummary")) {
             String string = extras.getString("matchTimeSummary");
-            if (this.mSummaryView == null) {
+            TextView textView = this.mSummaryView;
+            if (textView == null) {
                 Log.w("BcSmartspaceCardSports", "No match time summary view to update");
             } else {
-                BcSmartspaceTemplateDataUtils.updateVisibility(this.mSummaryView, 0);
+                BcSmartspaceTemplateDataUtils.updateVisibility(textView, 0);
                 this.mSummaryView.setText(string);
             }
             z = true;
@@ -80,44 +75,55 @@ public class BcSmartspaceCardSports extends BcSmartspaceCardSecondary {
         }
         if (extras.containsKey("firstCompetitorScore")) {
             String string2 = extras.getString("firstCompetitorScore");
-            if (this.mFirstCompetitorScore == null) {
+            TextView textView2 = this.mFirstCompetitorScore;
+            if (textView2 == null) {
                 Log.w("BcSmartspaceCardSports", "No first competitor logo view to update");
             } else {
-                BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorScore, 0);
+                BcSmartspaceTemplateDataUtils.updateVisibility(textView2, 0);
                 this.mFirstCompetitorScore.setText(string2);
             }
             z = true;
         }
         if (extras.containsKey("secondCompetitorScore")) {
             String string3 = extras.getString("secondCompetitorScore");
-            if (this.mSecondCompetitorScore == null) {
+            TextView textView3 = this.mSecondCompetitorScore;
+            if (textView3 == null) {
                 Log.w("BcSmartspaceCardSports", "No second competitor logo view to update");
             } else {
-                BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorScore, 0);
+                BcSmartspaceTemplateDataUtils.updateVisibility(textView3, 0);
                 this.mSecondCompetitorScore.setText(string3);
             }
             z = true;
         }
         if (extras.containsKey("firstCompetitorLogo")) {
             Bitmap bitmap = (Bitmap) extras.get("firstCompetitorLogo");
-            if (this.mFirstCompetitorLogo == null) {
+            ImageView imageView = this.mFirstCompetitorLogo;
+            if (imageView == null) {
                 Log.w("BcSmartspaceCardSports", "No first competitor logo view to update");
             } else {
-                BcSmartspaceTemplateDataUtils.updateVisibility(this.mFirstCompetitorLogo, 0);
+                BcSmartspaceTemplateDataUtils.updateVisibility(imageView, 0);
                 this.mFirstCompetitorLogo.setImageBitmap(bitmap);
             }
             z = true;
         }
-        if (extras.containsKey("secondCompetitorLogo")) {
-            Bitmap bitmap2 = (Bitmap) extras.get("secondCompetitorLogo");
-            if (this.mSecondCompetitorLogo == null) {
-                Log.w("BcSmartspaceCardSports", "No second competitor logo view to update");
-                return true;
-            }
-            BcSmartspaceTemplateDataUtils.updateVisibility(this.mSecondCompetitorLogo, 0);
-            this.mSecondCompetitorLogo.setImageBitmap(bitmap2);
+        if (!extras.containsKey("secondCompetitorLogo")) {
+            return z;
+        }
+        Bitmap bitmap2 = (Bitmap) extras.get("secondCompetitorLogo");
+        ImageView imageView2 = this.mSecondCompetitorLogo;
+        if (imageView2 == null) {
+            Log.w("BcSmartspaceCardSports", "No second competitor logo view to update");
             return true;
         }
-        return z;
+        BcSmartspaceTemplateDataUtils.updateVisibility(imageView2, 0);
+        this.mSecondCompetitorLogo.setImageBitmap(bitmap2);
+        return true;
+    }
+
+    @Override
+    public final void setTextColor(int i) {
+        this.mSummaryView.setTextColor(i);
+        this.mFirstCompetitorScore.setTextColor(i);
+        this.mSecondCompetitorScore.setTextColor(i);
     }
 }

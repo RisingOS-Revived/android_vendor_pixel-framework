@@ -1,6 +1,7 @@
 package com.google.android.systemui.smartspace;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,97 +13,137 @@ import android.graphics.RenderNode;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
+
 import com.android.internal.graphics.ColorUtils;
+
 import com.google.android.systemui.res.R;
 
 public class DoubleShadowIconDrawable extends Drawable {
-    public int mAmbientShadowRadius;
+    public final int mAmbientShadowRadius;
     public final int mCanvasSize;
     public RenderNode mDoubleShadowNode;
     public InsetDrawable mIconDrawable;
     public final int mIconInsetSize;
-    public int mKeyShadowOffsetX;
-    public int mKeyShadowOffsetY;
-    public int mKeyShadowRadius;
-    public boolean mShowShadow;
+    public final int mKeyShadowOffsetX;
+    public final int mKeyShadowOffsetY;
+    public final int mKeyShadowRadius;
+    public boolean mShowShadow = true;
 
     public DoubleShadowIconDrawable(Context context) {
-        int dimensionPixelSize = context.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_icon_size);
-        int dimensionPixelSize2 = context.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_icon_inset);
-        this.mIconInsetSize = dimensionPixelSize2;
-        int i = (dimensionPixelSize2 * 2) + dimensionPixelSize;
-        this.mCanvasSize = i;
-        this.mAmbientShadowRadius = context.getResources().getDimensionPixelSize(R.dimen.ambient_text_shadow_radius);
-        this.mKeyShadowRadius = context.getResources().getDimensionPixelSize(R.dimen.key_text_shadow_radius);
-        this.mKeyShadowOffsetX = context.getResources().getDimensionPixelSize(R.dimen.key_text_shadow_dx);
-        this.mKeyShadowOffsetY = context.getResources().getDimensionPixelSize(R.dimen.key_text_shadow_dy);
-        setBounds(0, 0, i, i);
+        this(
+                context.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_icon_size),
+                context.getResources()
+                        .getDimensionPixelSize(R.dimen.enhanced_smartspace_icon_inset),
+                context);
     }
 
-    @Override // android.graphics.drawable.Drawable
-    public int getOpacity() {
-        return 0;
+    public DoubleShadowIconDrawable(int iconSize, int insetSize, Context context) {
+        Resources resources = context.getResources();
+        mIconInsetSize = insetSize;
+        mCanvasSize = iconSize + 2 * insetSize;
+        mAmbientShadowRadius = resources.getDimensionPixelSize(R.dimen.ambient_text_shadow_radius);
+        mKeyShadowRadius = resources.getDimensionPixelSize(R.dimen.key_text_shadow_radius);
+        mKeyShadowOffsetX = resources.getDimensionPixelSize(R.dimen.key_text_shadow_dx);
+        mKeyShadowOffsetY = resources.getDimensionPixelSize(R.dimen.key_text_shadow_dy);
+        setBounds(0, 0, mCanvasSize, mCanvasSize);
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (canvas.isHardwareAccelerated() && mDoubleShadowNode != null && mShowShadow) {
+            if (!mDoubleShadowNode.hasDisplayList()) {
+                Canvas recordingCanvas = mDoubleShadowNode.beginRecording();
+                if (mIconDrawable != null) {
+                    mIconDrawable.draw(recordingCanvas);
+                }
+                mDoubleShadowNode.endRecording();
+            }
+            canvas.drawRenderNode(mDoubleShadowNode);
+        }
+        if (mIconDrawable != null) {
+            mIconDrawable.draw(canvas);
+        }
     }
 
     public void setIcon(Drawable drawable) {
-        RenderNode renderNode = null;
         if (drawable == null) {
-            this.mIconDrawable = null;
+            mIconDrawable = null;
             return;
         }
-        InsetDrawable insetDrawable = new InsetDrawable(drawable, this.mIconInsetSize);
-        this.mIconDrawable = insetDrawable;
-        int i = this.mCanvasSize;
-        insetDrawable.setBounds(0, 0, i, i);
-        if (this.mIconDrawable != null) {
-            RenderNode renderNode2 = new RenderNode("DoubleShadowNode");
-            int i2 = this.mCanvasSize;
-            renderNode2.setPosition(0, 0, i2, i2);
-            RenderEffect createShadowRenderEffect = createShadowRenderEffect(this.mAmbientShadowRadius, 0, 0, 48);
-            RenderEffect createShadowRenderEffect2 = createShadowRenderEffect(this.mKeyShadowRadius, this.mKeyShadowOffsetX, this.mKeyShadowOffsetY, 72);
-            if (createShadowRenderEffect != null && createShadowRenderEffect2 != null) {
-                renderNode2.setRenderEffect(RenderEffect.createBlendModeEffect(createShadowRenderEffect, createShadowRenderEffect2, BlendMode.DARKEN));
-                renderNode = renderNode2;
+
+        mIconDrawable = new InsetDrawable(drawable, mIconInsetSize);
+        mIconDrawable.setBounds(0, 0, mCanvasSize, mCanvasSize);
+
+        if (mIconDrawable != null) {
+            RenderNode shadowNode = new RenderNode("DoubleShadowNode");
+            shadowNode.setPosition(0, 0, mCanvasSize, mCanvasSize);
+
+            RenderEffect ambientShadowEffect =
+                    RenderEffect.createColorFilterEffect(
+                            new PorterDuffColorFilter(
+                                    Color.argb(48, 0, 0, 0), PorterDuff.Mode.MULTIPLY),
+                            RenderEffect.createOffsetEffect(
+                                    0f,
+                                    0f,
+                                    RenderEffect.createBlurEffect(
+                                            mAmbientShadowRadius,
+                                            mAmbientShadowRadius,
+                                            Shader.TileMode.CLAMP)));
+
+            RenderEffect keyShadowEffect =
+                    RenderEffect.createColorFilterEffect(
+                            new PorterDuffColorFilter(
+                                    Color.argb(72, 0, 0, 0), PorterDuff.Mode.MULTIPLY),
+                            RenderEffect.createOffsetEffect(
+                                    mKeyShadowOffsetX,
+                                    mKeyShadowOffsetY,
+                                    RenderEffect.createBlurEffect(
+                                            mKeyShadowRadius,
+                                            mKeyShadowRadius,
+                                            Shader.TileMode.CLAMP)));
+
+            if (ambientShadowEffect != null && keyShadowEffect != null) {
+                shadowNode.setRenderEffect(
+                        RenderEffect.createBlendModeEffect(
+                                ambientShadowEffect, keyShadowEffect, BlendMode.DARKEN));
             }
+            mDoubleShadowNode = shadowNode;
         }
-        this.mDoubleShadowNode = renderNode;
     }
 
-    public static RenderEffect createShadowRenderEffect(int i, int i2, int i3, int i4) {
-        return RenderEffect.createColorFilterEffect(new PorterDuffColorFilter(Color.argb(i4, 0, 0, 0), PorterDuff.Mode.MULTIPLY), RenderEffect.createOffsetEffect(i2, i3, RenderEffect.createBlurEffect(i, i, Shader.TileMode.CLAMP)));
+    @Override
+    public int getIntrinsicHeight() {
+        return mCanvasSize;
     }
 
-    @Override // android.graphics.drawable.Drawable
-    public void setAlpha(int i) {
-        this.mIconDrawable.setAlpha(i);
+    @Override
+    public int getIntrinsicWidth() {
+        return mCanvasSize;
     }
 
-    @Override // android.graphics.drawable.Drawable
+    @Override
+    public int getOpacity() {
+        return android.graphics.PixelFormat.TRANSLUCENT;
+    }
+
+    @Override
+    public void setAlpha(int alpha) {
+        if (mIconDrawable != null) {
+            mIconDrawable.setAlpha(alpha);
+        }
+    }
+
+    @Override
     public void setColorFilter(ColorFilter colorFilter) {
-        this.mIconDrawable.setColorFilter(colorFilter);
+        if (mIconDrawable != null) {
+            mIconDrawable.setColorFilter(colorFilter);
+        }
     }
 
-    @Override // android.graphics.drawable.Drawable
-    public void setTint(int alpha) {
-        if (this.mIconDrawable != null) {
-            this.mIconDrawable.setTint(alpha);
+    public void setTint(int color) {
+        if (mIconDrawable != null) {
+            mIconDrawable.setTint(color);
         }
-        this.mShowShadow = ColorUtils.calculateLuminance(alpha) > 0.5d;
-    }
-
-    @Override // android.graphics.drawable.Drawable
-    public void draw(Canvas canvas) {
-        RenderNode renderNode;
-        if (canvas.isHardwareAccelerated() && (renderNode = this.mDoubleShadowNode) != null && this.mShowShadow) {
-            if (!renderNode.hasDisplayList()) {
-                this.mIconDrawable.draw(this.mDoubleShadowNode.beginRecording());
-                this.mDoubleShadowNode.endRecording();
-            }
-            canvas.drawRenderNode(this.mDoubleShadowNode);
-        }
-        InsetDrawable insetDrawable = this.mIconDrawable;
-        if (insetDrawable != null) {
-            insetDrawable.draw(canvas);
-        }
+        mShowShadow = ColorUtils.calculateLuminance(color) > 0.5;
     }
 }

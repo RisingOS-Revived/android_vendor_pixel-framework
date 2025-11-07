@@ -4,7 +4,18 @@ java_library {
         type: "nano",
     },
     srcs: [
-        "smartspace.proto",
+        "SmartspaceProto.proto",
+    ],
+    sdk_version: "current",
+}
+
+java_library {
+    name: "smartspace-proto-lite-java",
+    proto: {
+        type: "lite",
+    },
+    srcs: [
+        "SmartspaceProtoLite.proto",
     ],
     sdk_version: "current",
 }

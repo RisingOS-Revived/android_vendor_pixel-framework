@@ -16,172 +16,268 @@ import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.util.Log;
 import android.view.View;
-import com.google.android.systemui.res.R;
+import android.widget.RemoteViews;
+
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.android.systemui.plugins.FalsingManager;
+
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLogger;
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggingInfo;
+import com.google.android.systemui.res.R;
 
-public final class BcSmartSpaceUtil {
+import java.util.List;
+import java.util.Map;
+
+public abstract class BcSmartSpaceUtil {
+    public static final Map<Integer, Integer> FEATURE_TYPE_TO_SECONDARY_CARD_RESOURCE_MAP =
+            Map.ofEntries(
+                    Map.entry(-1, R.layout.smartspace_card_combination),
+                    Map.entry(-2, R.layout.smartspace_card_combination_at_store),
+                    Map.entry(3, R.layout.smartspace_card_generic_landscape_image),
+                    Map.entry(18, R.layout.smartspace_card_generic_landscape_image),
+                    Map.entry(4, R.layout.smartspace_card_flight),
+                    Map.entry(14, R.layout.smartspace_card_loyalty),
+                    Map.entry(13, R.layout.smartspace_card_shopping_list),
+                    Map.entry(9, R.layout.smartspace_card_sports),
+                    Map.entry(10, R.layout.smartspace_card_weather_forecast),
+                    Map.entry(30, R.layout.smartspace_card_doorbell),
+                    Map.entry(20, R.layout.smartspace_card_doorbell));
+
     public static FalsingManager sFalsingManager;
     public static BcSmartspaceDataPlugin.IntentStarter sIntentStarter;
 
-    public static void setOnClickListener(View view, final SmartspaceTarget smartspaceTarget, final SmartspaceAction smartspaceAction, final BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, final String str, final BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo, final int i) {
-        if (view != null && smartspaceAction != null) {
-            final boolean z = smartspaceAction.getExtras() != null && smartspaceAction.getExtras().getBoolean("show_on_lockscreen");
-            final boolean z2 = smartspaceAction.getIntent() == null && smartspaceAction.getPendingIntent() == null;
-            BcSmartspaceDataPlugin.IntentStarter intentStarter = sIntentStarter;
-            if (intentStarter == null) {
-                intentStarter = new SmartspaceIntentStarter(str);
-            }
-            final BcSmartspaceDataPlugin.IntentStarter intentStarter2 = intentStarter;
-            view.setOnClickListener(new View.OnClickListener() { // from class: com.google.android.systemui.smartspace.BcSmartSpaceUtil.1
-                @Override // android.view.View.OnClickListener
-                public void onClick(View v) {
-                    FalsingManager falsingManager = BcSmartSpaceUtil.sFalsingManager;
-                    if (falsingManager == null || !falsingManager.isFalseTap(1)) {
-                        if (bcSmartspaceCardLoggingInfo != null) {
-                            if (bcSmartspaceCardLoggingInfo.mSubcardInfo != null) {
-                                bcSmartspaceCardLoggingInfo.mSubcardInfo.mClickedSubcardIndex = i;
-                            }
-                            BcSmartspaceCardLogger.log(BcSmartspaceEvent.SMARTSPACE_CARD_CLICK, bcSmartspaceCardLoggingInfo);
-                        }
-                        if (!z2) {
-                            intentStarter2.startFromAction(smartspaceAction, v, z);
-                        }
-                        if (smartspaceEventNotifier == null) {
-                            Log.w(str, "Cannot notify target interaction smartspace event: event notifier null.");
-                        } else {
-                            smartspaceEventNotifier.notifySmartspaceEvent(new SmartspaceTargetEvent.Builder(1).setSmartspaceTarget(smartspaceTarget).setSmartspaceActionId(smartspaceAction.getId()).build());
-                        }
-                    }
-                }
-            });
-            return;
-        }
-        Log.e(str, "No tap action can be set up");
-    }
-
-    public static void setOnClickListener(View view, final SmartspaceTarget smartspaceTarget, final TapAction tapAction, final BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, final String str, final BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo, final int i) {
-        if (view != null && tapAction != null) {
-            final boolean shouldShowOnLockscreen = tapAction.shouldShowOnLockscreen();
-            view.setOnClickListener(new View.OnClickListener() { // from class: com.google.android.systemui.smartspace.BcSmartSpaceUtil.2
-                @Override // android.view.View.OnClickListener
-                public void onClick(View view2) {
-                    FalsingManager falsingManager = BcSmartSpaceUtil.sFalsingManager;
-                    if (falsingManager == null || !falsingManager.isFalseTap(1)) {
-                        if (bcSmartspaceCardLoggingInfo != null) {
-                            if (bcSmartspaceCardLoggingInfo.mSubcardInfo != null) {
-                                bcSmartspaceCardLoggingInfo.mSubcardInfo.mClickedSubcardIndex = i;
-                            }
-                            BcSmartspaceCardLogger.log(BcSmartspaceEvent.SMARTSPACE_CARD_CLICK, bcSmartspaceCardLoggingInfo);
-                        }
-                        BcSmartspaceDataPlugin.IntentStarter intentStarter = BcSmartSpaceUtil.sIntentStarter;
-                        if (intentStarter == null) {
-                            intentStarter = new SmartspaceIntentStarter(str);
-                        }
-                        boolean z = tapAction == null || (tapAction.getIntent() == null && tapAction.getPendingIntent() == null);
-                        if (!z) {
-                            intentStarter.startFromAction(tapAction, view2, shouldShowOnLockscreen);
-                        }
-                        if (smartspaceEventNotifier == null) {
-                            Log.w(str, "Cannot notify target interaction smartspace event: event notifier null.");
-                        } else {
-                            smartspaceEventNotifier.notifySmartspaceEvent(new SmartspaceTargetEvent.Builder(1).setSmartspaceTarget(smartspaceTarget).setSmartspaceActionId(tapAction.getId().toString()).build());
-                        }
-                    }
-                }
-            });
-            return;
-        }
-        Log.e(str, "No tap action can be set up");
-    }
-
-    public static void setOnClickListener(BcSmartspaceCardSecondary bcSmartspaceCardSecondary, SmartspaceTarget smartspaceTarget, TapAction tapAction, BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, String str, BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
-        setOnClickListener(bcSmartspaceCardSecondary, smartspaceTarget, tapAction, smartspaceEventNotifier, str, bcSmartspaceCardLoggingInfo, 0);
-    }
-
-    public static Drawable getIconDrawable(Context context, Icon icon) {
-        Drawable bitmapDrawable;
-        if (icon == null) {
-            return null;
-        }
-        if (icon.getType() == 1 || icon.getType() == 5) {
-            bitmapDrawable = new BitmapDrawable(context.getResources(), icon.getBitmap());
-        } else {
-            bitmapDrawable = icon.loadDrawable(context);
-        }
-        if (bitmapDrawable != null) {
-            int dimensionPixelSize = context.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_icon_size);
-            bitmapDrawable.setBounds(0, 0, dimensionPixelSize, dimensionPixelSize);
-        }
-        return bitmapDrawable;
-    }
-
-    public static void setFalsingManager(FalsingManager falsingManager) {
-        sFalsingManager = falsingManager;
-    }
-
-    public static void setIntentStarter(BcSmartspaceDataPlugin.IntentStarter intentStarter) {
-        sIntentStarter = intentStarter;
-    }
-
-    public static Intent getOpenCalendarIntent() {
-        return new Intent("android.intent.action.VIEW").setData(ContentUris.appendId(CalendarContract.CONTENT_URI.buildUpon().appendPath("time"), System.currentTimeMillis()).build()).addFlags(270532608);
-    }
-
-    /* renamed from: com.google.android.systemui.smartspace.BcSmartSpaceUtil$AnonymousClass1  reason: case insensitive filesystem */
-    public static class SmartspaceIntentStarter implements BcSmartspaceDataPlugin.IntentStarter {
-        public final String tag;
-
-        public SmartspaceIntentStarter(String str) {
-            this.tag = str;
-        }
-
-        @Override // com.android.systemui.plugins.BcSmartspaceDataPlugin.IntentStarter
-        public final void startIntent(View view, Intent intent, boolean z) {
-            try {
-                view.getContext().startActivity(intent);
-            } catch (ActivityNotFoundException | NullPointerException | SecurityException e) {
-                Log.e(this.tag, "Cannot invoke smartspace intent", e);
-            }
-        }
-
-        @Override // com.android.systemui.plugins.BcSmartspaceDataPlugin.IntentStarter
-        public final void startPendingIntent(View view, PendingIntent pendingIntent, boolean z) {
-            try {
-                pendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                Log.e(this.tag, "Cannot invoke canceled smartspace intent", e);
-            }
-        }
-    }
-
     public static String getDimensionRatio(Bundle bundle) {
         if (bundle.containsKey("imageRatioWidth") && bundle.containsKey("imageRatioHeight")) {
-            int i = bundle.getInt("imageRatioWidth");
-            int i2 = bundle.getInt("imageRatioHeight");
-            if (i > 0 && i2 > 0) {
-                return i + ":" + i2;
+            int width = bundle.getInt("imageRatioWidth");
+            int height = bundle.getInt("imageRatioHeight");
+            if (width > 0 && height > 0) {
+                return width + ":" + height;
             }
-            return null;
         }
         return null;
     }
 
-    public static int getLoggingDisplaySurface(String str, boolean z, float f) {
-        if (str.equals("com.google.android.apps.nexuslauncher")) {
-            return 1;
+    public static int getFeatureType(SmartspaceTarget target) {
+        List<SmartspaceAction> actionChips = target.getActionChips();
+        int featureType = target.getFeatureType();
+        if (actionChips != null
+                && !actionChips.isEmpty()
+                && featureType == 13
+                && actionChips.size() == 1) {
+            return -2;
         }
-        if (str.equals("com.android.systemui")) {
-            if (f == 1.0f) {
-                return 3;
-            }
-            return f == 0.0f ? 2 : -1;
-        } else if (z) {
-            return 5;
+        return actionChips != null && !actionChips.isEmpty() ? -1 : featureType;
+    }
+
+    public static Drawable getIconDrawableWithCustomSize(Icon icon, Context context, int size) {
+        if (icon == null) {
+            return null;
+        }
+        Drawable drawable;
+        if (icon.getType() == Icon.TYPE_RESOURCE || icon.getType() == Icon.TYPE_URI) {
+            drawable = icon.loadDrawable(context);
         } else {
+            drawable = new BitmapDrawable(context.getResources(), icon.getBitmap());
+        }
+        if (drawable != null) {
+            drawable.setBounds(0, 0, size, size);
+        }
+        return drawable;
+    }
+
+    public static int getLoggingDisplaySurface(String uiSurface, float dozeAmount) {
+        if (uiSurface == null) {
             return 0;
+        }
+        switch (uiSurface) {
+            case "home":
+                return 1;
+            case "dream":
+                return 5;
+            case "lockscreen":
+                if (dozeAmount == 1.0f) {
+                    return 3;
+                } else if (dozeAmount == 0.0f) {
+                    return 2;
+                } else {
+                    return -1;
+                }
+            default:
+                return 0;
+        }
+    }
+
+    public static Intent getOpenCalendarIntent() {
+        return new Intent("android.intent.action.VIEW")
+                .setData(
+                        ContentUris.appendId(
+                                        CalendarContract.CONTENT_URI.buildUpon().appendPath("time"),
+                                        System.currentTimeMillis())
+                                .build())
+                .addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+    }
+
+    public static void setOnClickListener(
+            View view,
+            SmartspaceTarget target,
+            SmartspaceAction action,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+            String tag,
+            BcSmartspaceCardLoggingInfo loggingInfo,
+            int index) {
+        if (view == null || action == null) {
+            Log.e(tag, "No tap action can be set up");
+            return;
+        }
+
+        boolean shouldShowOnLockscreen =
+                action.getExtras() != null && action.getExtras().getBoolean("show_on_lockscreen");
+        boolean noIntent = action.getIntent() == null && action.getPendingIntent() == null;
+        BcSmartspaceDataPlugin.IntentStarter intentStarter =
+                sIntentStarter != null ? sIntentStarter : new DefaultIntentStarter(tag);
+        view.setOnClickListener(
+                v -> {
+                    if (sFalsingManager != null && sFalsingManager.isFalseTap(1)) {
+                        return;
+                    }
+                    if (loggingInfo != null) {
+                        if (loggingInfo.mSubcardInfo != null) {
+                            loggingInfo.mSubcardInfo.mClickedSubcardIndex = index;
+                        }
+                        BcSmartspaceCardLogger.log(
+                                BcSmartspaceEvent.SMARTSPACE_CARD_CLICK, loggingInfo);
+                    }
+                    if (!noIntent) {
+                        intentStarter.startFromAction(action, v, shouldShowOnLockscreen);
+                    }
+                    if (eventNotifier != null) {
+                        SmartspaceTargetEvent event =
+                                new SmartspaceTargetEvent.Builder(1)
+                                        .setSmartspaceTarget(target)
+                                        .setSmartspaceActionId(action.getId())
+                                        .build();
+                        eventNotifier.notifySmartspaceEvent(event);
+                    } else {
+                        Log.w(
+                                tag,
+                                "Cannot notify target interaction smartspace event: event notifier"
+                                    + " null.");
+                    }
+                });
+    }
+
+    public static void setOnClickListener(
+            View view,
+            SmartspaceTarget target,
+            TapAction tapAction,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+            String tag,
+            BcSmartspaceCardLoggingInfo loggingInfo,
+            int index) {
+        if (view == null || tapAction == null) {
+            Log.e(tag, "No tap action can be set up");
+            return;
+        }
+
+        boolean shouldShowOnLockscreen = tapAction.shouldShowOnLockscreen();
+        view.setOnClickListener(
+                v -> {
+                    if (sFalsingManager != null && sFalsingManager.isFalseTap(1)) {
+                        return;
+                    }
+                    if (loggingInfo != null) {
+                        if (loggingInfo.mSubcardInfo != null) {
+                            loggingInfo.mSubcardInfo.mClickedSubcardIndex = index;
+                        }
+                        BcSmartspaceCardLogger.log(
+                                BcSmartspaceEvent.SMARTSPACE_CARD_CLICK, loggingInfo);
+                    }
+                    BcSmartspaceDataPlugin.IntentStarter intentStarter =
+                            sIntentStarter != null ? sIntentStarter : new DefaultIntentStarter(tag);
+                    if (tapAction.getIntent() != null || tapAction.getPendingIntent() != null) {
+                        intentStarter.startFromAction(tapAction, v, shouldShowOnLockscreen);
+                    }
+                    if (eventNotifier != null) {
+                        SmartspaceTargetEvent event =
+                                new SmartspaceTargetEvent.Builder(1)
+                                        .setSmartspaceTarget(target)
+                                        .setSmartspaceActionId(tapAction.getId().toString())
+                                        .build();
+                        eventNotifier.notifySmartspaceEvent(event);
+                    } else {
+                        Log.w(
+                                tag,
+                                "Cannot notify target interaction smartspace event: event notifier"
+                                    + " null.");
+                    }
+                });
+    }
+
+    public static class InteractionHandler implements RemoteViews.InteractionHandler {
+        public final BcSmartspaceCardLoggingInfo loggingInfo;
+        public final BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier;
+        public final SmartspaceTarget target;
+        public final SmartspaceAction action;
+
+        public InteractionHandler(
+                BcSmartspaceCardLoggingInfo loggingInfo,
+                BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+                SmartspaceTarget target,
+                SmartspaceAction action) {
+            this.loggingInfo = loggingInfo;
+            this.eventNotifier = eventNotifier;
+            this.target = target;
+            this.action = action;
+        }
+
+        @Override
+        public boolean onInteraction(
+                View view, PendingIntent pendingIntent, RemoteViews.RemoteResponse response) {
+            BcSmartspaceDataPlugin.IntentStarter intentStarter =
+                    sIntentStarter != null
+                            ? sIntentStarter
+                            : new DefaultIntentStarter("BcSmartspaceRemoteViewsCard");
+            if (pendingIntent != null) {
+                BcSmartspaceCardLogger.log(BcSmartspaceEvent.SMARTSPACE_CARD_CLICK, loggingInfo);
+                if (eventNotifier != null) {
+                    SmartspaceTargetEvent event =
+                            new SmartspaceTargetEvent.Builder(1)
+                                    .setSmartspaceTarget(target)
+                                    .setSmartspaceActionId(action.getId())
+                                    .build();
+                    eventNotifier.notifySmartspaceEvent(event);
+                }
+                intentStarter.startPendingIntent(view, pendingIntent, false);
+            }
+            return true;
+        }
+    }
+
+    public static class DefaultIntentStarter implements BcSmartspaceDataPlugin.IntentStarter {
+        public final String tag;
+
+        public DefaultIntentStarter(String tag) {
+            this.tag = tag;
+        }
+
+        @Override
+        public void startIntent(View view, Intent intent, boolean showOnLockscreen) {
+            try {
+                view.getContext().startActivity(intent);
+            } catch (NullPointerException | ActivityNotFoundException | SecurityException e) {
+                Log.e(tag, "Cannot invoke smartspace intent", e);
+            }
+        }
+
+        @Override
+        public void startPendingIntent(
+                View view, PendingIntent pendingIntent, boolean showOnLockscreen) {
+            try {
+                pendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                Log.e(tag, "Cannot invoke canceled smartspace intent", e);
+            }
         }
     }
 }

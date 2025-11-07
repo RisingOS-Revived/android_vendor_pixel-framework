@@ -7,51 +7,29 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.google.android.systemui.res.R;
 
-public final class BcSmartspaceTemplateDataUtils {
-    public static int getSecondaryCardRes(int i) {
-        switch (i) {
-            case 2:
-                return R.layout.smartspace_sub_image_template_card;
-            case 3:
-                return R.layout.smartspace_sub_list_template_card;
-            case 4:
-                return R.layout.smartspace_carousel_template_card;
-            case 5:
-                return R.layout.smartspace_head_to_head_template_card;
-            case 6:
-                return R.layout.smartspace_combined_cards_template_card;
-            case 7:
-                return R.layout.smartspace_sub_card_template_card;
-            default:
-                return 0;
-        }
-    }
+import java.util.Map;
 
-    public static void offsetImageViewForIcon(ImageView imageView, DoubleShadowIconDrawable doubleShadowIconDrawable) {
-        if (doubleShadowIconDrawable == null) {
-            imageView.setTranslationX(0.0f);
-            imageView.setTranslationY(0.0f);
+public abstract class BcSmartspaceTemplateDataUtils {
+    public static final Map<Integer, Integer> TEMPLATE_TYPE_TO_SECONDARY_CARD_RES =
+            Map.ofEntries(
+                    Map.entry(2, R.layout.smartspace_sub_image_template_card),
+                    Map.entry(3, R.layout.smartspace_sub_list_template_card),
+                    Map.entry(7, R.layout.smartspace_sub_card_template_card),
+                    Map.entry(5, R.layout.smartspace_head_to_head_template_card),
+                    Map.entry(6, R.layout.smartspace_combined_cards_template_card),
+                    Map.entry(4, R.layout.smartspace_carousel_template_card));
+
+    public static void offsetTextViewForIcon(
+            TextView textView, DoubleShadowIconDrawable iconDrawable, boolean isRtl) {
+        if (iconDrawable == null) {
+            textView.setTranslationX(0f);
             return;
         }
-        float f = -doubleShadowIconDrawable.mIconInsetSize;
-        imageView.setTranslationX(f);
-        imageView.setTranslationY(f);
-    }
-
-    public static void offsetTextViewForIcon(TextView textView, DoubleShadowIconDrawable doubleShadowIconDrawable, boolean z) {
-        int i;
-        if (doubleShadowIconDrawable == null) {
-            textView.setTranslationX(0.0f);
-            return;
-        }
-        if (z) {
-            i = 1;
-        } else {
-            i = -1;
-        }
-        textView.setTranslationX(i * doubleShadowIconDrawable.mIconInsetSize);
+        int direction = isRtl ? 1 : -1;
+        textView.setTranslationX(direction * iconDrawable.mIconInsetSize);
     }
 
     public static void setIcon(ImageView imageView, Icon icon) {
@@ -61,8 +39,10 @@ public final class BcSmartspaceTemplateDataUtils {
         }
         if (icon == null) {
             Log.w("BcSmartspaceTemplateDataUtils", "Cannot set. The given icon is null");
-            updateVisibility(imageView, 8);
+            updateVisibility(imageView, View.GONE);
+            return;
         }
+
         imageView.setImageIcon(icon.getIcon());
         if (icon.getContentDescription() != null) {
             imageView.setContentDescription(icon.getContentDescription());
@@ -76,16 +56,18 @@ public final class BcSmartspaceTemplateDataUtils {
         }
         if (SmartspaceUtils.isEmpty(text)) {
             Log.w("BcSmartspaceTemplateDataUtils", "Cannot set. The given text is empty");
-            updateVisibility(textView, 8);
+            updateVisibility(textView, View.GONE);
+            return;
         }
+
         textView.setText(text.getText());
         textView.setEllipsize(text.getTruncateAtType());
         textView.setMaxLines(text.getMaxLines());
     }
 
-    public static void updateVisibility(View view, int i) {
-        if (view != null && view.getVisibility() != i) {
-            view.setVisibility(i);
+    public static void updateVisibility(View view, int visibility) {
+        if (view != null && view.getVisibility() != visibility) {
+            view.setVisibility(visibility);
         }
     }
 }

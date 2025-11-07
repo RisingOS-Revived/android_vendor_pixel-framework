@@ -2,18 +2,24 @@ package com.google.android.systemui.smartspace.uitemplate;
 
 import android.app.smartspace.SmartspaceTarget;
 import android.app.smartspace.SmartspaceUtils;
+import android.app.smartspace.uitemplatedata.Icon;
 import android.app.smartspace.uitemplatedata.SubCardTemplateData;
+import android.app.smartspace.uitemplatedata.Text;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.google.android.systemui.res.R;
+
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
+
 import com.google.android.systemui.smartspace.BcSmartSpaceUtil;
 import com.google.android.systemui.smartspace.BcSmartspaceCardSecondary;
 import com.google.android.systemui.smartspace.BcSmartspaceTemplateDataUtils;
+import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggerUtil;
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggingInfo;
+import com.google.android.systemui.res.R;
 
 public class SubCardTemplateCard extends BcSmartspaceCardSecondary {
     public ImageView mImageView;
@@ -23,50 +29,66 @@ public class SubCardTemplateCard extends BcSmartspaceCardSecondary {
         super(context);
     }
 
-    public SubCardTemplateCard(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
+    public SubCardTemplateCard(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void setTextColor(int i) {
-        this.mTextView.setTextColor(i);
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        mImageView = findViewById(R.id.image_view);
+        mTextView = findViewById(R.id.card_prompt);
     }
 
-    public final void onFinishInflate() {
-        super/*android.view.ViewGroup*/.onFinishInflate();
-        this.mImageView = (ImageView) findViewById(R.id.image_view);
-        this.mTextView = (TextView) findViewById(R.id.card_prompt);
+    @Override
+    public void resetUi() {
+        BcSmartspaceTemplateDataUtils.updateVisibility(mImageView, View.GONE);
+        BcSmartspaceTemplateDataUtils.updateVisibility(mTextView, View.GONE);
     }
 
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final void resetUi() {
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mImageView, 8);
-        BcSmartspaceTemplateDataUtils.updateVisibility(this.mTextView, 8);
-    }
-
-    @Override // com.google.android.systemui.smartspace.BcSmartspaceCardSecondary
-    public final boolean setSmartspaceActions(SmartspaceTarget smartspaceTarget, BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier, BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo) {
-        boolean z;
-        SubCardTemplateData templateData = (SubCardTemplateData) smartspaceTarget.getTemplateData();
-        if (templateData == null) {
-            Log.w("SubCardTemplateCard", "SubCardTemplateData is null");
+    @Override
+    public boolean setSmartspaceActions(
+            SmartspaceTarget target,
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier,
+            BcSmartspaceCardLoggingInfo loggingInfo) {
+        SubCardTemplateData templateData = (SubCardTemplateData) target.getTemplateData();
+        if (!BcSmartspaceCardLoggerUtil.containsValidTemplateType(templateData)) {
+            Log.w("SubCardTemplateCard", "SubCardTemplateData is null or invalid template type");
             return false;
         }
-        if (templateData.getSubCardIcon() != null) {
-            BcSmartspaceTemplateDataUtils.setIcon(this.mImageView, templateData.getSubCardIcon());
-            BcSmartspaceTemplateDataUtils.updateVisibility(this.mImageView, 0);
-            z = true;
-        } else {
-            z = false;
+
+        boolean isValid = false;
+
+        Icon subCardIcon = templateData.getSubCardIcon();
+        if (subCardIcon != null) {
+            BcSmartspaceTemplateDataUtils.setIcon(mImageView, subCardIcon);
+            BcSmartspaceTemplateDataUtils.updateVisibility(mImageView, View.VISIBLE);
+            isValid = true;
         }
-        if (!SmartspaceUtils.isEmpty(templateData.getSubCardText())) {
-            BcSmartspaceTemplateDataUtils.setText(this.mTextView, templateData.getSubCardText());
-            BcSmartspaceTemplateDataUtils.updateVisibility(this.mTextView, 0);
-            z = true;
+
+        Text subCardText = templateData.getSubCardText();
+        if (!SmartspaceUtils.isEmpty(subCardText)) {
+            BcSmartspaceTemplateDataUtils.setText(mTextView, subCardText);
+            BcSmartspaceTemplateDataUtils.updateVisibility(mTextView, View.VISIBLE);
+            isValid = true;
         }
-        if (z && templateData.getSubCardAction() != null) {
-            BcSmartSpaceUtil.setOnClickListener(this, smartspaceTarget, templateData.getSubCardAction(), smartspaceEventNotifier, "SubCardTemplateCard", bcSmartspaceCardLoggingInfo);
+
+        if (isValid && templateData.getSubCardAction() != null) {
+            BcSmartSpaceUtil.setOnClickListener(
+                    this,
+                    target,
+                    templateData.getSubCardAction(),
+                    eventNotifier,
+                    "SubCardTemplateCard",
+                    loggingInfo,
+                    0);
         }
-        return z;
+
+        return isValid;
+    }
+
+    @Override
+    public void setTextColor(int color) {
+        mTextView.setTextColor(color);
     }
 }

@@ -60,6 +60,7 @@ android_library {
         "android.frameworks.stats-V1-java",
         "vendor-pixelatoms-java",
         "smartspace-proto-java",
+        "smartspace-proto-lite-java",
         "guava",
         "googlebattery-lib",
         "google-battery",
@@ -101,6 +102,11 @@ android_app {
     ],
     libs: [
         "ims-common",
+    ],
+    optional_uses_libs: [
+        "androidx.window.extensions",
+        "androidx.window.sidecar",
+        "com.qti.extphone.extphonelib",
     ],
     jni_libs: ["libtensorflowlite_jni"],
     use_embedded_native_libs: true,

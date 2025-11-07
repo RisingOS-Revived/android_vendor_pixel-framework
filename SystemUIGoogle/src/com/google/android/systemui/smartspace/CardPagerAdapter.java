@@ -4,829 +4,750 @@ import android.app.smartspace.SmartspaceAction;
 import android.app.smartspace.SmartspaceTarget;
 import android.app.smartspace.SmartspaceUtils;
 import android.app.smartspace.uitemplatedata.BaseTemplateData;
-import android.app.smartspace.uitemplatedata.TapAction;
 import android.content.ComponentName;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.os.Handler;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import androidx.constraintlayout.widget.ConstraintLayout;
+import android.widget.RemoteViews;
+
 import androidx.viewpager.widget.PagerAdapter;
+
 import com.android.internal.graphics.ColorUtils;
 import com.android.launcher3.icons.GraphicsUtils;
-import com.android.systemui.Dependency;
-import com.google.android.systemui.res.R;
+import com.android.systemui.plugins.BcSmartspaceConfigPlugin;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
+
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggerUtil;
 import com.google.android.systemui.smartspace.logging.BcSmartspaceCardLoggingInfo;
 import com.google.android.systemui.smartspace.logging.BcSmartspaceSubcardLoggingInfo;
 import com.google.android.systemui.smartspace.uitemplate.BaseTemplateCard;
-import com.android.systemui.tuner.TunerService;
+import com.google.android.systemui.res.R;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.function.IntPredicate;
-import java.util.stream.IntStream;
+import java.util.Set;
 
-public class CardPagerAdapter extends PagerAdapter implements TunerService.Tunable {
-    public static final int MAX_FEATURE_TYPE = 41;
-    public static final int MIN_FEATURE_TYPE = -2;
-    public final View mRoot;
-    public BcSmartspaceDataPlugin mDataProvider;
-    public int mCurrentTextColor;
-    public int mPrimaryTextColor;
-    public ArrayList<SmartspaceTarget> mSmartspaceTargets = new ArrayList<>();
-    public ArrayList<SmartspaceTarget> mAODTargets = new ArrayList<>();
-    public ArrayList<SmartspaceTarget> mLockscreenTargets = new ArrayList<>();
-    public final ArrayList<SmartspaceTarget> mMediaTargets = new ArrayList<>();
-    public final SparseArray<ViewHolder> mViewHolders = new SparseArray<>();
-    public final LazyServerFlagLoader mEnableCardRecycling = new LazyServerFlagLoader("enable_card_recycling");
-    public final LazyServerFlagLoader mEnableReducedCardRecycling = new LazyServerFlagLoader("enable_reduced_card_recycling");
-    public final SparseArray<BaseTemplateCard> mRecycledCards = new SparseArray<>();
-    public final SparseArray<BcSmartspaceCard> mRecycledLegacyCards = new SparseArray<>();
-    public BcNextAlarmData mNextAlarmData = new BcNextAlarmData();
-    public boolean mIsDreaming = false;
-    public float mDozeAmount = 0.0f;
-    public float mLastDozeAmount = 0.0f;
-    public int mDozeColor = -1;
-    public String mDndDescription = null;
-    public Drawable mDndImage = null;
-    public boolean mKeyguardBypassEnabled = false;
-    public boolean mHasDifferentTargets = false;
-    public String mUiSurface;
-    private boolean mClockStyleEnabled = false;
-
-    private static final String CLOCK_STYLE = "system:" + "clock_style";
-
-    List<SmartspaceTarget> getTargets() {
-        return this.mSmartspaceTargets;
-    }
-
-    public CardPagerAdapter(View view) {
-        this.mRoot = view;
-        int attrColor = GraphicsUtils.getAttrColor(view.getContext(), 16842806);
-        this.mPrimaryTextColor = attrColor;
-        this.mCurrentTextColor = attrColor;
-        Dependency.get(TunerService.class).addTunable(this, CLOCK_STYLE);
-    }
-
-    @Override
-    public void onTuningChanged(String key, String newValue) {
-        switch (key) {
-            case CLOCK_STYLE:
-                mClockStyleEnabled = TunerService.parseInteger(newValue, 0) != 0;
-                break;
-            default:
-                break;
+public class CardPagerAdapter extends PagerAdapter implements CardAdapter {
+    public static class Companion {
+        public int getBaseLegacyCardRes(int featureType) {
+            switch (featureType) {
+                case -2:
+                case -1:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 6:
+                case 9:
+                case 10:
+                case 18:
+                case 20:
+                case 30:
+                case 13:
+                case 14:
+                case 15:
+                    return R.layout.smartspace_card;
+                default:
+                    return R.layout.smartspace_card;
+            }
         }
-    }
 
-    public static int getBaseLegacyCardRes(int layout) {
-        return layout != 1 ? R.layout.smartspace_card : R.layout.smartspace_card_date;
-    }
-
-    public static int getLegacySecondaryCardRes(int layout) {
-        if (layout != -2) {
-            if (layout == -1) {
-                return R.layout.smartspace_card_combination;
-            }
-            if (layout == 3) {
-                return R.layout.smartspace_card_generic_landscape_image;
-            }
-            if (layout == 4) {
-                return R.layout.smartspace_card_flight;
-            }
-            if (layout == 9) {
-                return R.layout.smartspace_card_sports;
-            }
-            if (layout == 10) {
-                return R.layout.smartspace_card_weather_forecast;
-            }
-            if (layout == 13) {
-                return R.layout.smartspace_card_shopping_list;
-            }
-            if (layout == 14) {
-                return R.layout.smartspace_card_loyalty;
-            }
-            if (layout == 18) {
-                return R.layout.smartspace_card_generic_landscape_image;
-            }
-            if (layout != 20 && layout != 30) {
-                return 0;
-            }
-            return R.layout.smartspace_card_doorbell;
-        }
-        return R.layout.smartspace_card_combination_at_store;
-    }
-
-    public static boolean useRecycledViewForAction(SmartspaceAction smartspaceAction, SmartspaceAction smartspaceAction2) {
-        if (smartspaceAction == null && smartspaceAction2 == null) {
-            return true;
-        }
-        if (smartspaceAction != null && smartspaceAction2 != null) {
-            Bundle extras = smartspaceAction.getExtras();
-            Bundle extras2 = smartspaceAction2.getExtras();
-            if (extras == null && extras2 == null) {
+        public boolean useRecycledViewForAction(
+                SmartspaceAction newAction, SmartspaceAction recycledAction) {
+            if (newAction == null && recycledAction == null) {
                 return true;
             }
-            Bundle extras3 = smartspaceAction.getExtras();
-            Bundle extras4 = smartspaceAction2.getExtras();
-            return (extras3 == null || extras4 == null || !smartspaceAction.getExtras().keySet().equals(smartspaceAction2.getExtras().keySet())) ? false : true;
+            if (newAction == null || recycledAction == null) {
+                return false;
+            }
+            Bundle newExtras = newAction.getExtras();
+            Bundle recycledExtras = recycledAction.getExtras();
+            if (newExtras == null && recycledExtras == null) {
+                return true;
+            }
+            if (newExtras == null || recycledExtras == null) {
+                return false;
+            }
+            Set<String> newKeys = newExtras.keySet();
+            Set<String> recycledKeys = recycledExtras.keySet();
+            return Objects.equals(newKeys, recycledKeys);
         }
-        return false;
-    }
 
-    public static boolean useRecycledViewForActionsList(final List<SmartspaceAction> list, final List<SmartspaceAction> list2) {
-        if (list == null && list2 == null) {
+        public boolean useRecycledViewForActionsList(
+                List<SmartspaceAction> newActions, List<SmartspaceAction> recycledActions) {
+            if (newActions == null && recycledActions == null) {
+                return true;
+            }
+            if (newActions == null
+                    || recycledActions == null
+                    || newActions.size() != recycledActions.size()) {
+                return false;
+            }
+            for (int i = 0; i < newActions.size(); i++) {
+                if (!useRecycledViewForAction(newActions.get(i), recycledActions.get(i))) {
+                    return false;
+                }
+            }
             return true;
         }
-        return list != null && list2 != null && list.size() == list2.size() && IntStream.range(0, list.size()).allMatch(new IntPredicate() { // from class: com.google.android.systemui.smartspace.CardPagerAdapter.1
-            @Override // java.util.function.IntPredicate
-            public boolean test(int i) {
-                return CardPagerAdapter.useRecycledViewForAction((SmartspaceAction) list.get(i), (SmartspaceAction) list2.get(i));
-            }
-        });
-    }
 
-    public static boolean useRecycledViewForNewTarget(SmartspaceTarget smartspaceTarget, SmartspaceTarget smartspaceTarget2) {
-        if (smartspaceTarget2 == null || !smartspaceTarget.getSmartspaceTargetId().equals(smartspaceTarget2.getSmartspaceTargetId()) || !useRecycledViewForAction(smartspaceTarget.getHeaderAction(), smartspaceTarget2.getHeaderAction()) || !useRecycledViewForAction(smartspaceTarget.getBaseAction(), smartspaceTarget2.getBaseAction()) || !useRecycledViewForActionsList(smartspaceTarget.getActionChips(), smartspaceTarget2.getActionChips()) || !useRecycledViewForActionsList(smartspaceTarget.getIconGrid(), smartspaceTarget2.getIconGrid())) {
-            return false;
+        public boolean useRecycledViewForNewTarget(
+                SmartspaceTarget newTarget, SmartspaceTarget recycledTarget) {
+            if (recycledTarget == null) {
+                return false;
+            }
+            if (!newTarget.getSmartspaceTargetId().equals(recycledTarget.getSmartspaceTargetId())) {
+                return false;
+            }
+            if (!useRecycledViewForAction(
+                    newTarget.getHeaderAction(), recycledTarget.getHeaderAction())) {
+                return false;
+            }
+            if (!useRecycledViewForAction(
+                    newTarget.getBaseAction(), recycledTarget.getBaseAction())) {
+                return false;
+            }
+            if (!useRecycledViewForActionsList(
+                    newTarget.getActionChips(), recycledTarget.getActionChips())) {
+                return false;
+            }
+            if (!useRecycledViewForActionsList(
+                    newTarget.getIconGrid(), recycledTarget.getIconGrid())) {
+                return false;
+            }
+            BaseTemplateData newTemplateData = newTarget.getTemplateData();
+            BaseTemplateData recycledTemplateData = recycledTarget.getTemplateData();
+            if (newTemplateData == null && recycledTemplateData == null) {
+                return true;
+            }
+            return newTemplateData != null
+                    && recycledTemplateData != null
+                    && newTemplateData.equals(recycledTemplateData);
         }
-        BaseTemplateData templateData = smartspaceTarget.getTemplateData();
-        BaseTemplateData templateData2 = smartspaceTarget2.getTemplateData();
-        return (templateData == null || templateData2 == null || !templateData.equals(templateData2)) ? false : true;
     }
 
-    public void refreshCards() {
-        for (int i = 0; i < this.mViewHolders.size(); i++) {
-            SparseArray<ViewHolder> sparseArray = this.mViewHolders;
-            ViewHolder viewHolder = sparseArray.get(sparseArray.keyAt(i));
-            if (viewHolder != null) {
-                onBindViewHolder(viewHolder);
-            }
+    public static final Companion Companion = new Companion();
+    private final List<SmartspaceTarget> _aodTargets = new ArrayList<>();
+    private final List<SmartspaceTarget> _lockscreenTargets = new ArrayList<>();
+    private Handler bgHandler;
+    private BcSmartspaceConfigPlugin configProvider;
+    private int currentTextColor;
+    private BcSmartspaceDataPlugin dataProvider;
+    private float dozeAmount;
+    private final int dozeColor = -1;
+    private final LazyServerFlagLoader enableCardRecycling =
+            new LazyServerFlagLoader("enable_card_recycling");
+    private final LazyServerFlagLoader enableReducedCardRecycling =
+            new LazyServerFlagLoader("enable_reduced_card_recycling");
+    private boolean hasAodLockscreenTransition;
+    private boolean hasDifferentTargets;
+    private boolean keyguardBypassEnabled;
+    private final List<SmartspaceTarget> mediaTargets = new ArrayList<>();
+    private Integer nonRemoteViewsHorizontalPadding;
+    private float previousDozeAmount;
+    private int primaryTextColor;
+    private final SparseArray<BaseTemplateCard> recycledCards = new SparseArray<>();
+    private final SparseArray<BcSmartspaceCard> recycledLegacyCards = new SparseArray<>();
+    private final SparseArray<BcSmartspaceRemoteViewsCard> recycledRemoteViewsCards =
+            new SparseArray<>();
+    private final BcSmartspaceView root;
+    private List<SmartspaceTarget> smartspaceTargets = new ArrayList<>();
+    private BcSmartspaceDataPlugin.TimeChangedDelegate timeChangedDelegate;
+    private TransitionType transitioningTo = TransitionType.NOT_IN_TRANSITION;
+    private String uiSurface;
+    private final SparseArray<ViewHolder> viewHolders = new SparseArray<>();
+
+    public CardPagerAdapter(BcSmartspaceView root, BcSmartspaceConfigPlugin configProvider) {
+        this.root = root;
+        this.configProvider = configProvider;
+        int color = GraphicsUtils.getAttrColor(root.getContext(), android.R.attr.textColorPrimary);
+        this.primaryTextColor = color;
+        this.currentTextColor = color;
+    }
+
+    public void addDefaultDateCardIfEmpty(List<SmartspaceTarget> targets) {
+        if (targets.isEmpty()) {
+            SmartspaceTarget target =
+                    new SmartspaceTarget.Builder(
+                                    "date_card_794317_92634",
+                                    new ComponentName(root.getContext(), CardPagerAdapter.class),
+                                    root.getContext().getUser())
+                            .setFeatureType(1)
+                            .setTemplateData(new BaseTemplateData.Builder(1).build())
+                            .build();
+            targets.add(target);
         }
     }
 
     @Override
-    public void destroyItem(ViewGroup viewGroup, int position, Object obj) {
-        ViewHolder viewHolder = (ViewHolder) obj;
-        if (viewHolder == null) {
-            return;
+    public void destroyItem(ViewGroup container, int position, Object object) {
+        ViewHolder holder = (ViewHolder) object;
+        if (holder.legacyCard != null && holder.target != null && enableCardRecycling.get()) {
+            recycledLegacyCards.put(
+                    BcSmartSpaceUtil.getFeatureType(holder.target), holder.legacyCard);
         }
-        BcSmartspaceCard bcSmartspaceCard = viewHolder.mLegacyCard;
-        if (bcSmartspaceCard != null) {
-            SmartspaceTarget smartspaceTarget = bcSmartspaceCard.mTarget;
-            if (smartspaceTarget != null && this.mEnableCardRecycling.get()) {
-                this.mRecycledLegacyCards.put(getFeatureType(smartspaceTarget), bcSmartspaceCard);
+        if (holder.legacyCard != null) {
+            container.removeView(holder.legacyCard);
+        }
+        if (holder.card != null && holder.target != null && enableCardRecycling.get()) {
+            recycledCards.put(holder.target.getFeatureType(), holder.card);
+        }
+        if (holder.card != null) {
+            container.removeView(holder.card);
+        }
+        if (holder.remoteViewsCard != null) {
+            if (enableCardRecycling.get()) {
+                Log.d("SsCardPagerAdapter", "[rmv] Caching RemoteViews card");
+                recycledRemoteViewsCards.put(
+                        BcSmartSpaceUtil.getFeatureType(holder.target), holder.remoteViewsCard);
             }
-            viewGroup.removeView(bcSmartspaceCard);
+            Log.d("SsCardPagerAdapter", "[rmv] Removing RemoteViews card");
+            container.removeView(holder.remoteViewsCard);
         }
-        BaseTemplateCard baseTemplateCard = viewHolder.mCard;
-        if (baseTemplateCard != null) {
-            if (baseTemplateCard.mTarget != null && this.mEnableCardRecycling.get()) {
-                this.mRecycledCards.put(baseTemplateCard.mTarget.getFeatureType(), baseTemplateCard);
-            }
-            viewGroup.removeView(viewHolder.mCard);
-        }
-        if (this.mViewHolders.get(position) == viewHolder) {
-            this.mViewHolders.remove(position);
+        if (viewHolders.get(position) == holder) {
+            viewHolders.remove(position);
         }
     }
 
     @Override
-    public int getCount() {
-        return this.mSmartspaceTargets.size();
-    }
-
-    @Override
-    public int getItemPosition(Object obj) {
-        ViewHolder viewHolder = (ViewHolder) obj;
-        SmartspaceTarget targetAtPosition = getTargetAtPosition(viewHolder.mPosition);
-        if (viewHolder.mTarget == targetAtPosition) {
-            return -1;
-        }
-        if (targetAtPosition != null && getFeatureType(targetAtPosition) == getFeatureType(viewHolder.mTarget) && Objects.equals(targetAtPosition.getSmartspaceTargetId(), viewHolder.mTarget.getSmartspaceTargetId())) {
-            viewHolder.mTarget = targetAtPosition;
-            onBindViewHolder(viewHolder);
-            return -1;
-        }
-        return -2;
-    }
-
-    public SmartspaceTarget getTargetAtPosition(int position) {
-        if (!this.mSmartspaceTargets.isEmpty() && position >= 0 && position < this.mSmartspaceTargets.size()) {
-            return this.mSmartspaceTargets.get(position);
+    public SmartspaceCard getCardAtPosition(int position) {
+        ViewHolder holder = viewHolders.get(position);
+        if (holder != null) {
+            if (holder.card != null) {
+                return holder.card;
+            }
+            if (holder.legacyCard != null) {
+                return holder.legacyCard;
+            }
+            return holder.remoteViewsCard;
         }
         return null;
     }
 
-    @Override // androidx.viewpager.widget.PagerAdapter
-    public final Object instantiateItem(ViewGroup viewGroup, int i) {
-        BcSmartspaceCard bcSmartspaceCard;
-        ViewHolder viewHolder;
-        BaseTemplateCard baseTemplateCard;
-        BaseTemplateData.SubItemInfo subItemInfo;
-        int i2;
-        int secondaryCardRes;
-        SmartspaceTarget smartspaceTarget = (SmartspaceTarget) this.mSmartspaceTargets.get(i);
-        if (smartspaceTarget.getTemplateData() != null) {
-            Log.i("SsCardPagerAdapter", "Use UI template for the feature: " + smartspaceTarget.getFeatureType());
-            if (this.mEnableCardRecycling.get()) {
-                baseTemplateCard = (BaseTemplateCard) this.mRecycledCards.removeReturnOld(smartspaceTarget.getFeatureType());
-            } else {
-                baseTemplateCard = null;
-            }
-            if (baseTemplateCard == null || (this.mEnableReducedCardRecycling.get() && !useRecycledViewForNewTarget(smartspaceTarget, baseTemplateCard.mTarget))) {
-                BaseTemplateData templateData = smartspaceTarget.getTemplateData();
-                if (templateData != null) {
-                    subItemInfo = templateData.getPrimaryItem();
-                } else {
-                    subItemInfo = null;
-                }
-                if (subItemInfo != null && (!SmartspaceUtils.isEmpty(subItemInfo.getText()) || subItemInfo.getIcon() != null)) {
-                    i2 = R.layout.smartspace_base_template_card;
-                } else {
-                    i2 = R.layout.smartspace_base_template_card_with_date;
-                }
-                LayoutInflater from = LayoutInflater.from(viewGroup.getContext());
-                BaseTemplateCard baseTemplateCard2 = (BaseTemplateCard) from.inflate(i2, viewGroup, false);
-                if (templateData != null && (secondaryCardRes = BcSmartspaceTemplateDataUtils.getSecondaryCardRes(templateData.getTemplateType())) != 0) {
-                    BcSmartspaceCardSecondary bcSmartspaceCardSecondary = (BcSmartspaceCardSecondary) from.inflate(secondaryCardRes, (ViewGroup) baseTemplateCard2, false);
-                    if (bcSmartspaceCardSecondary != null) {
-                        Log.i("SsCardPagerAdapter", "Secondary card is found");
-                    }
-                    ViewGroup viewGroup2 = baseTemplateCard2.mSecondaryCardPane;
-                    if (viewGroup2 != null) {
-                        baseTemplateCard2.mSecondaryCard = bcSmartspaceCardSecondary;
-                        BcSmartspaceTemplateDataUtils.updateVisibility(viewGroup2, 8);
-                        baseTemplateCard2.mSecondaryCardPane.removeAllViews();
-                        if (bcSmartspaceCardSecondary != null) {
-                            ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(-2, baseTemplateCard2.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_card_height));
-                            layoutParams.setMarginStart(baseTemplateCard2.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_secondary_card_start_margin));
-                            layoutParams.startToStart = 0;
-                            layoutParams.topToTop = 0;
-                            layoutParams.bottomToBottom = 0;
-                            baseTemplateCard2.mSecondaryCardPane.addView(bcSmartspaceCardSecondary, layoutParams);
-                        }
-                    }
-                }
-                baseTemplateCard = baseTemplateCard2;
-            }
-            viewHolder = new ViewHolder(i, null, smartspaceTarget, baseTemplateCard);
-            viewGroup.addView(baseTemplateCard);
-        } else {
-            if (this.mEnableCardRecycling.get()) {
-                bcSmartspaceCard = (BcSmartspaceCard) this.mRecycledLegacyCards.removeReturnOld(getFeatureType(smartspaceTarget));
-            } else {
-                bcSmartspaceCard = null;
-            }
-            if (bcSmartspaceCard == null || (this.mEnableReducedCardRecycling.get() && !useRecycledViewForNewTarget(smartspaceTarget, bcSmartspaceCard.mTarget))) {
-                int featureType = getFeatureType(smartspaceTarget);
-                LayoutInflater from2 = LayoutInflater.from(viewGroup.getContext());
-                BcSmartspaceCard bcSmartspaceCard2 = (BcSmartspaceCard) from2.inflate(getBaseLegacyCardRes(featureType), viewGroup, false);
-                int legacySecondaryCardRes = getLegacySecondaryCardRes(featureType);
-                if (legacySecondaryCardRes != 0) {
-                    BcSmartspaceCardSecondary bcSmartspaceCardSecondary2 = (BcSmartspaceCardSecondary) from2.inflate(legacySecondaryCardRes, (ViewGroup) bcSmartspaceCard2, false);
-                    ViewGroup viewGroup3 = bcSmartspaceCard2.mSecondaryCardGroup;
-                    if (viewGroup3 != null) {
-                        bcSmartspaceCard2.mSecondaryCard = bcSmartspaceCardSecondary2;
-                        BcSmartspaceTemplateDataUtils.updateVisibility(viewGroup3, 8);
-                        bcSmartspaceCard2.mSecondaryCardGroup.removeAllViews();
-                        if (bcSmartspaceCardSecondary2 != null) {
-                            ConstraintLayout.LayoutParams layoutParams2 = new ConstraintLayout.LayoutParams(-2, bcSmartspaceCard2.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_card_height));
-                            layoutParams2.setMarginStart(bcSmartspaceCard2.getResources().getDimensionPixelSize(R.dimen.enhanced_smartspace_secondary_card_start_margin));
-                            layoutParams2.startToStart = 0;
-                            layoutParams2.topToTop = 0;
-                            layoutParams2.bottomToBottom = 0;
-                            bcSmartspaceCard2.mSecondaryCardGroup.addView(bcSmartspaceCardSecondary2, layoutParams2);
-                        }
-                    }
-                }
-                bcSmartspaceCard = bcSmartspaceCard2;
-            }
-            viewHolder = new ViewHolder(i, bcSmartspaceCard, smartspaceTarget, null);
-            viewGroup.addView(bcSmartspaceCard);
-        }
-        onBindViewHolder(viewHolder);
-        this.mViewHolders.put(i, viewHolder);
-        return viewHolder;
+    @Override
+    public int getCount() {
+        return smartspaceTargets.size();
     }
 
-    public boolean isViewFromObject(View view, Object obj) {
-        ViewHolder viewHolder = (ViewHolder) obj;
-        return view == viewHolder.mLegacyCard || view == viewHolder.mCard;
+    @Override
+    public float getDozeAmount() {
+        return dozeAmount;
     }
 
-    public void onBindViewHolder(ViewHolder viewHolder) {
-        BcSmartspaceSubcardLoggingInfo createSubcardLoggingInfo;
-        BcSmartspaceDataPlugin.SmartspaceEventNotifier smartspaceEventNotifier;
-        TapAction tapAction;
-        BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo;
-        int i;
-        String uuid;
-        Drawable drawable;
-        int i2;
-        int i3;
-        int i4;
-        BcSmartspaceDataPlugin.SmartspaceEventNotifier eventNotifier;
-        String uuid2;
-        BcNextAlarmData bcNextAlarmData;
-        int i5;
-        int i6;
-        String str;
-        DoubleShadowIconDrawable doubleShadowIconDrawable;
-        int i7;
-        TapAction tapAction2;
-        int i8;
-        SmartspaceTarget smartspaceTarget = this.mSmartspaceTargets.get(viewHolder.mPosition);
-        BcSmartspaceCardLoggingInfo.Builder builder = new BcSmartspaceCardLoggingInfo.Builder();
-        builder.mInstanceId = InstanceId.create(smartspaceTarget);
-        builder.mFeatureType = smartspaceTarget.getFeatureType();
-        builder.mDisplaySurface = BcSmartSpaceUtil.getLoggingDisplaySurface(this.mRoot.getContext().getPackageName(), this.mIsDreaming, this.mDozeAmount);
-        builder.mRank = viewHolder.mPosition;
-        builder.mCardinality = this.mSmartspaceTargets.size();
-        builder.mUid = BcSmartspaceCardLoggerUtil.getUid(this.mRoot.getContext().getPackageManager(), smartspaceTarget);
-        if (smartspaceTarget.getTemplateData() != null) {
-            createSubcardLoggingInfo = BcSmartspaceCardLoggerUtil.createSubcardLoggingInfo(smartspaceTarget.getTemplateData());
-        } else {
-            createSubcardLoggingInfo = BcSmartspaceCardLoggerUtil.createSubcardLoggingInfo(smartspaceTarget);
+    @Override
+    public boolean getHasAodLockscreenTransition() {
+        return hasAodLockscreenTransition;
+    }
+
+    @Override
+    public boolean getHasDifferentTargets() {
+        return hasDifferentTargets;
+    }
+
+    @Override
+    public BcSmartspaceCard getLegacyCardAtPosition(int position) {
+        ViewHolder holder = viewHolders.get(position);
+        return holder != null ? holder.legacyCard : null;
+    }
+
+    @Override
+    public List<SmartspaceTarget> getLockscreenTargets() {
+        if (!mediaTargets.isEmpty() && keyguardBypassEnabled) {
+            return mediaTargets;
         }
-        builder.mSubcardInfo = createSubcardLoggingInfo;
-        BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo2 = new BcSmartspaceCardLoggingInfo(builder);
-        if (smartspaceTarget.getTemplateData() != null) {
-            BcSmartspaceCardLoggerUtil.tryForcePrimaryFeatureType(bcSmartspaceCardLoggingInfo2);
-            BaseTemplateCard baseTemplateCard = viewHolder.mCard;
-            if (baseTemplateCard == null) {
+        return _lockscreenTargets;
+    }
+
+    @Override
+    public BcSmartspaceRemoteViewsCard getRemoteViewsCardAtPosition(int position) {
+        ViewHolder holder = viewHolders.get(position);
+        return holder != null ? holder.remoteViewsCard : null;
+    }
+
+    @Override
+    public List<SmartspaceTarget> getSmartspaceTargets() {
+        return smartspaceTargets;
+    }
+
+    @Override
+    public SmartspaceTarget getTargetAtPosition(int position) {
+        if (!smartspaceTargets.isEmpty() && position >= 0 && position < smartspaceTargets.size()) {
+            return smartspaceTargets.get(position);
+        }
+        return null;
+    }
+
+    @Override
+    public BaseTemplateCard getTemplateCardAtPosition(int position) {
+        ViewHolder holder = viewHolders.get(position);
+        return holder != null ? holder.card : null;
+    }
+
+    @Override
+    public String getUiSurface() {
+        return uiSurface;
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        SmartspaceTarget target = smartspaceTargets.get(position);
+        RemoteViews remoteViews = target.getRemoteViews();
+        Log.i("SsCardPagerAdapter", "[rmv] Rendering flag - enabled: true rmv: " + remoteViews);
+        View cardView = null;
+        if (remoteViews != null) {
+            Log.i(
+                    "SsCardPagerAdapter",
+                    "[rmv] Use RemoteViews for the feature: " + target.getFeatureType());
+            BcSmartspaceRemoteViewsCard remoteViewsCard =
+                    enableCardRecycling.get()
+                            ? recycledRemoteViewsCards.removeReturnOld(
+                                    BcSmartSpaceUtil.getFeatureType(target))
+                            : null;
+            if (remoteViewsCard == null) {
+                remoteViewsCard = new BcSmartspaceRemoteViewsCard(container.getContext());
+                remoteViewsCard.mUiSurface = uiSurface;
+                remoteViewsCard.setLayoutParams(
+                        new ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+            cardView = remoteViewsCard;
+            ViewHolder holder = new ViewHolder(position, null, target, null, remoteViewsCard);
+            container.addView(cardView);
+            viewHolders.put(position, holder);
+            onBindViewHolder(holder);
+            return holder;
+        } else if (BcSmartspaceCardLoggerUtil.containsValidTemplateType(target.getTemplateData())) {
+            Log.i(
+                    "SsCardPagerAdapter",
+                    "Use UI template for the feature: " + target.getFeatureType());
+            BaseTemplateCard templateCard =
+                    enableCardRecycling.get()
+                            ? recycledCards.removeReturnOld(target.getFeatureType())
+                            : null;
+            if (templateCard != null
+                    && enableReducedCardRecycling.get()
+                    && !Companion.useRecycledViewForNewTarget(target, templateCard.mTarget)) {
+                templateCard = null;
+            }
+            if (templateCard == null) {
+                // STX comment-out // Always use smartspace_base_template_card to avoid date view in
+                // secondary cards
+                // STX comment-out int layoutRes = R.layout.smartspace_base_template_card;
+                BaseTemplateData templateData = target.getTemplateData();
+                BaseTemplateData.SubItemInfo primaryItem =
+                        templateData != null ? templateData.getPrimaryItem() : null; // STX edit
+                int layoutRes =
+                        (primaryItem == null
+                                        || (SmartspaceUtils.isEmpty(primaryItem.getText())
+                                                && primaryItem.getIcon() == null))
+                                ? R.layout.smartspace_base_template_card_with_date
+                                : R.layout.smartspace_base_template_card; // STX edit
+                templateCard =
+                        (BaseTemplateCard)
+                                LayoutInflater.from(container.getContext())
+                                        .inflate(layoutRes, container, false);
+                templateCard.mUiSurface = uiSurface;
+                if (templateCard.mDateView != null && "lockscreen".equals(uiSurface)) {
+                    if (!templateCard.mDateView.isAttachedToWindow()) {
+                        templateCard.mDateView.mUpdatesOnAod = true;
+                    } else {
+                        throw new IllegalStateException(
+                                "Must call before attaching view to window.");
+                    }
+                }
+                if (nonRemoteViewsHorizontalPadding != null) {
+                    templateCard.setPaddingRelative(
+                            nonRemoteViewsHorizontalPadding,
+                            templateCard.getPaddingTop(),
+                            nonRemoteViewsHorizontalPadding,
+                            templateCard.getPaddingBottom());
+                }
+                templateCard.mBgHandler = bgHandler;
+                if (templateCard.mDateView != null) {
+                    templateCard.mDateView.mBgHandler = bgHandler;
+                    if (!templateCard.mDateView.isAttachedToWindow()) {
+                        templateCard.mDateView.mTimeChangedDelegate = timeChangedDelegate;
+                    } else {
+                        throw new IllegalStateException(
+                                "Must call before attaching view to window.");
+                    }
+                }
+                Map<Integer, Integer> templateTypeToSecondaryCardRes =
+                        BcSmartspaceTemplateDataUtils.TEMPLATE_TYPE_TO_SECONDARY_CARD_RES;
+                Integer secondaryRes =
+                        templateTypeToSecondaryCardRes.get(
+                                target.getTemplateData().getTemplateType());
+                if (secondaryRes != null) {
+                    BcSmartspaceCardSecondary secondaryCard =
+                            (BcSmartspaceCardSecondary)
+                                    LayoutInflater.from(container.getContext())
+                                            .inflate(secondaryRes, container, false);
+                    Log.i("SsCardPagerAdapter", "Secondary card is found");
+                    templateCard.setSecondaryCard(secondaryCard);
+                }
+            }
+            cardView = templateCard;
+            ViewHolder holder = new ViewHolder(position, null, target, templateCard, null);
+            container.addView(cardView);
+            viewHolders.put(position, holder);
+            onBindViewHolder(holder);
+            return holder;
+        } else {
+            BcSmartspaceCard legacyCard =
+                    enableCardRecycling.get()
+                            ? recycledLegacyCards.removeReturnOld(
+                                    BcSmartSpaceUtil.getFeatureType(target))
+                            : null;
+            if (legacyCard != null
+                    && enableReducedCardRecycling.get()
+                    && !Companion.useRecycledViewForNewTarget(target, legacyCard.mTarget)) {
+                legacyCard = null;
+            }
+            if (legacyCard == null) {
+                int featureType = BcSmartSpaceUtil.getFeatureType(target);
+                int layoutRes = Companion.getBaseLegacyCardRes(featureType);
+                if (layoutRes == 0) {
+                    Log.w(
+                            "SsCardPagerAdapter",
+                            "No legacy card can be created for feature type: " + featureType);
+                } else {
+                    legacyCard =
+                            (BcSmartspaceCard)
+                                    LayoutInflater.from(container.getContext())
+                                            .inflate(layoutRes, container, false);
+                    legacyCard.mUiSurface = uiSurface;
+                    if (nonRemoteViewsHorizontalPadding != null) {
+                        legacyCard.setPaddingRelative(
+                                nonRemoteViewsHorizontalPadding,
+                                legacyCard.getPaddingTop(),
+                                nonRemoteViewsHorizontalPadding,
+                                legacyCard.getPaddingBottom());
+                    }
+                    Integer secondaryRes =
+                            (Integer)
+                                    BcSmartSpaceUtil.FEATURE_TYPE_TO_SECONDARY_CARD_RESOURCE_MAP
+                                            .get(featureType);
+                    if (secondaryRes != null) {
+                        BcSmartspaceCardSecondary secondaryCard =
+                                (BcSmartspaceCardSecondary)
+                                        LayoutInflater.from(container.getContext())
+                                                .inflate(secondaryRes, container, false);
+                        legacyCard.setSecondaryCard(secondaryCard);
+                    }
+                }
+            }
+            cardView = legacyCard;
+            ViewHolder holder = new ViewHolder(position, legacyCard, target, null, null);
+            if (cardView != null) {
+                container.addView(cardView);
+            }
+            viewHolders.put(position, holder);
+            onBindViewHolder(holder);
+            return holder;
+        }
+    }
+
+    @Override
+    public boolean isViewFromObject(View view, Object object) {
+        ViewHolder holder = (ViewHolder) object;
+        return view == holder.legacyCard || view == holder.card || view == holder.remoteViewsCard;
+    }
+
+    @Override
+    public int getItemPosition(Object object) {
+        ViewHolder holder = (ViewHolder) object;
+        SmartspaceTarget currentTarget = getTargetAtPosition(holder.position);
+        if (holder.target == currentTarget) {
+            return POSITION_UNCHANGED;
+        }
+        if (currentTarget != null
+                && BcSmartSpaceUtil.getFeatureType(currentTarget)
+                        == BcSmartSpaceUtil.getFeatureType(holder.target)
+                && currentTarget
+                        .getSmartspaceTargetId()
+                        .equals(holder.target.getSmartspaceTargetId())) {
+            holder.setTarget(currentTarget);
+            onBindViewHolder(holder);
+            return POSITION_UNCHANGED;
+        }
+        return POSITION_NONE;
+    }
+
+    public void onBindViewHolder(ViewHolder holder) {
+        SmartspaceTarget target = smartspaceTargets.get(holder.position);
+        boolean hasValidTemplate =
+                BcSmartspaceCardLoggerUtil.containsValidTemplateType(target.getTemplateData());
+        BcSmartspaceCardLoggingInfo.Builder loggingInfoBuilder =
+                new BcSmartspaceCardLoggingInfo.Builder()
+                        .setInstanceId(InstanceId.create(target))
+                        .setFeatureType(target.getFeatureType())
+                        .setDisplaySurface(
+                                BcSmartSpaceUtil.getLoggingDisplaySurface(uiSurface, dozeAmount))
+                        .setRank(holder.position)
+                        .setCardinality(smartspaceTargets.size())
+                        .setUid(-1);
+        BcSmartspaceSubcardLoggingInfo subcardInfo =
+                hasValidTemplate
+                        ? BcSmartspaceCardLoggerUtil.createSubcardLoggingInfo(
+                                target.getTemplateData())
+                        : BcSmartspaceCardLoggerUtil.createSubcardLoggingInfo(target);
+        loggingInfoBuilder.setSubcardInfo(subcardInfo);
+        loggingInfoBuilder.setDimensionalInfo(
+                BcSmartspaceCardLoggerUtil.createDimensionalLoggingInfo(target.getTemplateData()));
+        BcSmartspaceCardLoggingInfo loggingInfo =
+                new BcSmartspaceCardLoggingInfo(loggingInfoBuilder);
+        if (target.getRemoteViews() != null) {
+            if (holder.remoteViewsCard == null) {
+                Log.w("SsCardPagerAdapter", "[rmv] No RemoteViews card view can be binded");
+                return;
+            }
+            Log.d("SsCardPagerAdapter", "[rmv] Refreshing RemoteViews card");
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier =
+                    dataProvider != null
+                            ? event -> dataProvider.notifySmartspaceEvent(event)
+                            : null;
+            holder.remoteViewsCard.bindData(
+                    target, notifier, loggingInfo, smartspaceTargets.size() > 1);
+        } else if (hasValidTemplate) {
+            if (holder.card == null) {
                 Log.w("SsCardPagerAdapter", "No ui-template card view can be binded");
                 return;
             }
-            baseTemplateCard.mIsDreaming = this.mIsDreaming;
-            if (this.mDataProvider == null) {
-                eventNotifier = null;
-            } else {
-                eventNotifier = smartspaceTargetEvent -> {
-                    this.mDataProvider.notifySmartspaceEvent(smartspaceTargetEvent);
-                };
+            if (target.getTemplateData() == null) {
+                throw new IllegalStateException("Required value was null.");
             }
-            BcNextAlarmData bcNextAlarmData2 = this.mNextAlarmData;
-            if (!smartspaceTarget.getSmartspaceTargetId().equals(baseTemplateCard.mPrevSmartspaceTargetId)) {
-                baseTemplateCard.mTarget = null;
-                baseTemplateCard.mTemplateData = null;
-                baseTemplateCard.mFeatureType = 0;
-                baseTemplateCard.mLoggingInfo = null;
-                baseTemplateCard.setOnClickListener(null);
-                baseTemplateCard.resetTextView(baseTemplateCard.mTitleTextView);
-                baseTemplateCard.resetTextView(baseTemplateCard.mSubtitleTextView);
-                baseTemplateCard.resetTextView(baseTemplateCard.mSubtitleSupplementalView);
-                baseTemplateCard.resetTextView(baseTemplateCard.mSupplementalLineTextView);
-                baseTemplateCard.resetTextView(baseTemplateCard.mNextAlarmTextView);
-                ImageView imageView = baseTemplateCard.mNextAlarmImageView;
-                if (imageView != null) {
-                    imageView.setImageDrawable(null);
-                }
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mTitleTextView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mSubtitleTextView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mSubtitleSupplementalView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mSecondaryCardPane, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mDndImageView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mNextAlarmImageView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mNextAlarmTextView, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mExtrasGroup, 4);
-            }
-            baseTemplateCard.mPrevSmartspaceTargetId = smartspaceTarget.getSmartspaceTargetId();
-            baseTemplateCard.mTarget = smartspaceTarget;
-            baseTemplateCard.mTemplateData = smartspaceTarget.getTemplateData();
-            baseTemplateCard.mFeatureType = smartspaceTarget.getFeatureType();
-            baseTemplateCard.mLoggingInfo = bcSmartspaceCardLoggingInfo2;
-            baseTemplateCard.mShouldShowPageIndicator = this.mSmartspaceTargets.size() > 1 && !mClockStyleEnabled;
-            baseTemplateCard.mValidSecondaryCard = false;
-            ViewGroup viewGroup = baseTemplateCard.mTextGroup;
-            if (viewGroup != null) {
-                viewGroup.setTranslationX(0.0f);
-            }
-            if (baseTemplateCard.mTemplateData == null) {
-                doubleShadowIconDrawable = null;
-                i6 = 8;
-            } else {
-                BcSmartspaceCardLoggingInfo bcSmartspaceCardLoggingInfo3 = baseTemplateCard.mLoggingInfo;
-                if (bcSmartspaceCardLoggingInfo3 == null) {
-                    BcSmartspaceCardLoggingInfo.Builder builder2 = new BcSmartspaceCardLoggingInfo.Builder();
-                    builder2.mDisplaySurface = BcSmartSpaceUtil.getLoggingDisplaySurface(baseTemplateCard.getContext().getPackageName(), baseTemplateCard.mIsDreaming, baseTemplateCard.mDozeAmount);
-                    builder2.mFeatureType = baseTemplateCard.mFeatureType;
-                    builder2.mUid = BcSmartspaceCardLoggerUtil.getUid(baseTemplateCard.getContext().getPackageManager(), baseTemplateCard.mTarget);
-                    bcSmartspaceCardLoggingInfo3 = new BcSmartspaceCardLoggingInfo(builder2);
-                }
-                baseTemplateCard.mLoggingInfo = bcSmartspaceCardLoggingInfo3;
-                if (baseTemplateCard.mSecondaryCard != null) {
-                    Log.i("SsBaseTemplateCard", "Secondary card is not null");
-                    BcSmartspaceCardSecondary bcSmartspaceCardSecondary = baseTemplateCard.mSecondaryCard;
-                    String smartspaceTargetId = smartspaceTarget.getSmartspaceTargetId();
-                    if (!bcSmartspaceCardSecondary.mPrevSmartspaceTargetId.equals(smartspaceTargetId)) {
-                        bcSmartspaceCardSecondary.mPrevSmartspaceTargetId = smartspaceTargetId;
-                        bcSmartspaceCardSecondary.resetUi();
-                    }
-                    baseTemplateCard.mValidSecondaryCard = baseTemplateCard.mSecondaryCard.setSmartspaceActions(smartspaceTarget, eventNotifier, baseTemplateCard.mLoggingInfo);
-                }
-                ViewGroup viewGroup2 = baseTemplateCard.mSecondaryCardPane;
-                if (viewGroup2 != null) {
-                    if (baseTemplateCard.mDozeAmount != 1.0f && baseTemplateCard.mValidSecondaryCard) {
-                        i8 = 0;
-                    } else {
-                        i8 = 8;
-                    }
-                    BcSmartspaceTemplateDataUtils.updateVisibility(viewGroup2, i8);
-                }
-                BaseTemplateData.SubItemInfo primaryItem = baseTemplateCard.mTemplateData.getPrimaryItem();
-                if (baseTemplateCard.mDateView == null) {
-                    bcNextAlarmData = bcNextAlarmData2;
-                    i5 = 8;
-                } else {
-                    if (primaryItem != null && primaryItem.getTapAction() != null) {
-                        uuid2 = primaryItem.getTapAction().getId().toString();
-                    } else {
-                        uuid2 = UUID.randomUUID().toString();
-                    }
-                    TapAction build = new TapAction.Builder(uuid2).setIntent(BcSmartSpaceUtil.getOpenCalendarIntent()).build();
-                    bcNextAlarmData = bcNextAlarmData2;
-                    i5 = 8;
-                    BcSmartSpaceUtil.setOnClickListener(baseTemplateCard, baseTemplateCard.mTarget, build, eventNotifier, "SsBaseTemplateCard", bcSmartspaceCardLoggingInfo2, 0);
-                }
-                baseTemplateCard.setUpTextView(baseTemplateCard.mTitleTextView, baseTemplateCard.mTemplateData.getPrimaryItem(), eventNotifier);
-                baseTemplateCard.setUpTextView(baseTemplateCard.mSubtitleTextView, baseTemplateCard.mTemplateData.getSubtitleItem(), eventNotifier);
-                baseTemplateCard.setUpTextView(baseTemplateCard.mSubtitleSupplementalView, baseTemplateCard.mTemplateData.getSubtitleSupplementalItem(), eventNotifier);
-                BaseTemplateData.SubItemInfo supplementalAlarmItem = baseTemplateCard.mTemplateData.getSupplementalAlarmItem();
-                ImageView imageView2 = baseTemplateCard.mNextAlarmImageView;
-                if (imageView2 != null && baseTemplateCard.mNextAlarmTextView != null) {
-                    if (bcNextAlarmData.mImage == null) {
-                        BcSmartspaceTemplateDataUtils.updateVisibility(imageView2, i5);
-                        BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mNextAlarmTextView, i5);
-                        BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(baseTemplateCard.mNextAlarmImageView, null);
-                    } else {
-                        DoubleShadowIconDrawable doubleShadowIconDrawable2 = new DoubleShadowIconDrawable(baseTemplateCard.getContext());
-                        doubleShadowIconDrawable2.setIcon(bcNextAlarmData.mImage);
-                        baseTemplateCard.mNextAlarmImageView.setImageDrawable(doubleShadowIconDrawable2);
-                        BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(baseTemplateCard.mNextAlarmImageView, doubleShadowIconDrawable2);
-                        BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mNextAlarmImageView, 0);
-                        String description = bcNextAlarmData.getDescription(supplementalAlarmItem);
-                        baseTemplateCard.mNextAlarmTextView.setContentDescription(baseTemplateCard.getContext().getString(R.string.accessibility_next_alarm, description));
-                        baseTemplateCard.mNextAlarmTextView.setText(description);
-                        BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mNextAlarmTextView, 0);
-                        if (supplementalAlarmItem == null) {
-                            tapAction2 = null;
-                        } else {
-                            tapAction2 = supplementalAlarmItem.getTapAction();
-                        }
-                        bcNextAlarmData.setOnClickListener(baseTemplateCard.mNextAlarmImageView, tapAction2, eventNotifier, BcSmartSpaceUtil.getLoggingDisplaySurface(baseTemplateCard.getContext().getPackageName(), baseTemplateCard.mIsDreaming, baseTemplateCard.mDozeAmount));
-                        bcNextAlarmData.setOnClickListener(baseTemplateCard.mNextAlarmTextView, tapAction2, eventNotifier, BcSmartSpaceUtil.getLoggingDisplaySurface(baseTemplateCard.getContext().getPackageName(), baseTemplateCard.mIsDreaming, baseTemplateCard.mDozeAmount));
-                    }
-                }
-                baseTemplateCard.setUpTextView(baseTemplateCard.mSupplementalLineTextView, baseTemplateCard.mTemplateData.getSupplementalLineItem(), eventNotifier);
-                baseTemplateCard.updateZenVisibility();
-                if (baseTemplateCard.mTemplateData.getPrimaryItem() != null && baseTemplateCard.mTemplateData.getPrimaryItem().getTapAction() != null) {
-                    i6 = i5;
-                    str = "SsBaseTemplateCard";
-                    i7 = 2;
-                    doubleShadowIconDrawable = null;
-                    BcSmartSpaceUtil.setOnClickListener(baseTemplateCard, smartspaceTarget, baseTemplateCard.mTemplateData.getPrimaryItem().getTapAction(), eventNotifier, "SsBaseTemplateCard", baseTemplateCard.mLoggingInfo, 0);
-                } else {
-                    i6 = i5;
-                    str = "SsBaseTemplateCard";
-                    doubleShadowIconDrawable = null;
-                    i7 = 2;
-                }
-                ViewGroup viewGroup3 = baseTemplateCard.mSecondaryCardPane;
-                if (viewGroup3 == null) {
-                    Log.i(str, "Secondary card pane is null");
-                } else {
-                    ViewGroup.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) viewGroup3.getLayoutParams();
-                    ((ConstraintLayout.LayoutParams) layoutParams).matchConstraintMaxWidth = baseTemplateCard.getWidth() / i7;
-                    baseTemplateCard.mSecondaryCardPane.setLayoutParams(layoutParams);
-                }
-            }
-            if (baseTemplateCard.mDndImageView != null) {
-                if (this.mDndImage == null) {
-                    BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mDndImageView, i6);
-                    BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(baseTemplateCard.mDndImageView, doubleShadowIconDrawable);
-                } else {
-                    DoubleShadowIconDrawable doubleShadowIconDrawable3 = new DoubleShadowIconDrawable(baseTemplateCard.getContext());
-                    doubleShadowIconDrawable3.setIcon(this.mDndImage.mutate());
-                    baseTemplateCard.mDndImageView.setImageDrawable(doubleShadowIconDrawable3);
-                    baseTemplateCard.mDndImageView.setContentDescription(this.mDndDescription);
-                    BcSmartspaceTemplateDataUtils.updateVisibility(baseTemplateCard.mDndImageView, 0);
-                    BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(baseTemplateCard.mDndImageView, doubleShadowIconDrawable3);
-                }
-                baseTemplateCard.updateZenVisibility();
-            }
-            baseTemplateCard.setPrimaryTextColor(this.mCurrentTextColor);
-            baseTemplateCard.setDozeAmount(this.mDozeAmount);
-            return;
-        }
-        BcSmartspaceCardLoggerUtil.tryForcePrimaryFeatureTypeAndInjectWeatherSubcard(bcSmartspaceCardLoggingInfo2, smartspaceTarget);
-        BcSmartspaceCard bcSmartspaceCard = viewHolder.mLegacyCard;
-        if (bcSmartspaceCard == null) {
-            Log.w("SsCardPagerAdapter", "No legacy card view can be binded");
-            return;
-        }
-        bcSmartspaceCard.mIsDreaming = this.mIsDreaming;
-        if (this.mDataProvider == null) {
-            smartspaceEventNotifier = null;
+            BcSmartspaceCardLoggerUtil.tryForcePrimaryFeatureTypeOrUpdateLogInfoFromTemplateData(
+                    loggingInfo, target.getTemplateData());
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier =
+                    dataProvider != null
+                            ? event -> dataProvider.notifySmartspaceEvent(event)
+                            : null;
+            holder.card.bindData(target, notifier, loggingInfo, smartspaceTargets.size() > 1);
+            holder.card.setPrimaryTextColor(currentTextColor);
+            holder.card.setDozeAmount(dozeAmount);
         } else {
-            smartspaceEventNotifier = smartspaceTargetEvent2 -> {
-                this.mDataProvider.notifySmartspaceEvent(smartspaceTargetEvent2);
-            };
-        }
-        String smartspaceTargetId2 = smartspaceTarget.getSmartspaceTargetId();
-        if (!bcSmartspaceCard.mPrevSmartspaceTargetId.equals(smartspaceTargetId2)) {
-            bcSmartspaceCard.mPrevSmartspaceTargetId = smartspaceTargetId2;
-            bcSmartspaceCard.mEventNotifier = null;
-            BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mSecondaryCardGroup, 8);
-            bcSmartspaceCard.mIconDrawable.setIcon(null);
-            bcSmartspaceCard.updateZenVisibility();
-            bcSmartspaceCard.setTitle(null, null, false);
-            bcSmartspaceCard.setSubtitle(null, null, false);
-            bcSmartspaceCard.updateIconTint();
-            bcSmartspaceCard.setOnClickListener(null);
-        }
-        bcSmartspaceCard.mTarget = smartspaceTarget;
-        bcSmartspaceCard.mEventNotifier = smartspaceEventNotifier;
-        SmartspaceAction headerAction = smartspaceTarget.getHeaderAction();
-        SmartspaceAction baseAction = smartspaceTarget.getBaseAction();
-        bcSmartspaceCard.mUsePageIndicatorUi = this.mSmartspaceTargets.size() > 1 && !mClockStyleEnabled;
-        bcSmartspaceCard.mValidSecondaryCard = false;
-        ViewGroup viewGroup4 = bcSmartspaceCard.mTextGroup;
-        if (viewGroup4 != null) {
-            viewGroup4.setTranslationX(0.0f);
-        }
-        if (headerAction != null) {
-            BcSmartspaceCardSecondary bcSmartspaceCardSecondary2 = bcSmartspaceCard.mSecondaryCard;
-            if (bcSmartspaceCardSecondary2 != null) {
-                String smartspaceTargetId3 = smartspaceTarget.getSmartspaceTargetId();
-                if (!bcSmartspaceCardSecondary2.mPrevSmartspaceTargetId.equals(smartspaceTargetId3)) {
-                    bcSmartspaceCardSecondary2.mPrevSmartspaceTargetId = smartspaceTargetId3;
-                    bcSmartspaceCardSecondary2.resetUi();
-                }
-                bcSmartspaceCard.mValidSecondaryCard = bcSmartspaceCard.mSecondaryCard.setSmartspaceActions(smartspaceTarget, bcSmartspaceCard.mEventNotifier, bcSmartspaceCardLoggingInfo2);
+            if (holder.legacyCard == null) {
+                Log.w("SsCardPagerAdapter", "No legacy card view can be binded");
+                return;
             }
-            ViewGroup viewGroup5 = bcSmartspaceCard.mSecondaryCardGroup;
-            if (bcSmartspaceCard.mDozeAmount != 1.0f && bcSmartspaceCard.mValidSecondaryCard) {
-                i4 = 8;
-            } else {
-                i4 = 0;
-            }
-            BcSmartspaceTemplateDataUtils.updateVisibility(viewGroup5, i4);
-            Drawable iconDrawable = BcSmartSpaceUtil.getIconDrawable(bcSmartspaceCard.getContext(), headerAction.getIcon());
-            boolean z6 = iconDrawable != null;
-            bcSmartspaceCard.mIconDrawable.setIcon(iconDrawable);
-            CharSequence title = headerAction.getTitle();
-            CharSequence subtitle = headerAction.getSubtitle();
-            boolean z7 = smartspaceTarget.getFeatureType() == 1 || !TextUtils.isEmpty(title);
-            boolean z11 = !TextUtils.isEmpty(subtitle);
-            bcSmartspaceCard.updateZenVisibility();
-            if (!z7) {
-                title = subtitle;
-            }
-            CharSequence contentDescription = headerAction.getContentDescription();
-            boolean z8 = z7 != z11 && z6;
-            bcSmartspaceCard.setTitle(title, contentDescription, z8);
-            if (!z7 || !z11) {
-                subtitle = null;
-            }
-            bcSmartspaceCard.setSubtitle(subtitle, headerAction.getContentDescription(), z6);
-            bcSmartspaceCard.updateIconTint();
-        }
-        if (bcSmartspaceCard.mBaseActionIconSubtitleView != null) {
-            if (baseAction != null && baseAction.getIcon() != null) {
-                drawable = BcSmartSpaceUtil.getIconDrawable(bcSmartspaceCard.getContext(), baseAction.getIcon());
-            } else {
-                drawable = null;
-            }
-            if (baseAction != null && baseAction.getIcon() != null && drawable != null) {
-                drawable.setTintList(null);
-                bcSmartspaceCard.mBaseActionIconSubtitleView.setText(baseAction.getSubtitle());
-                bcSmartspaceCard.mBaseActionIconSubtitleView.setCompoundDrawablesRelative(drawable, null, null, null);
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mBaseActionIconSubtitleView, 0);
-                if (baseAction.getExtras() != null && !baseAction.getExtras().isEmpty()) {
-                    i2 = baseAction.getExtras().getInt("subcardType", -1);
-                } else {
-                    i2 = -1;
-                }
-                if (i2 != -1) {
-                    i3 = BcSmartspaceCard.getClickedIndex(bcSmartspaceCardLoggingInfo2, i2);
-                } else {
-                    Log.d("BcSmartspaceCard", String.format("Subcard expected but missing type. loggingInfo=%s, baseAction=%s", bcSmartspaceCardLoggingInfo2, baseAction));
-                    i3 = 0;
-                }
-                tapAction = null;
-                bcSmartspaceCardLoggingInfo = bcSmartspaceCardLoggingInfo2;
-                BcSmartSpaceUtil.setOnClickListener(bcSmartspaceCard.mBaseActionIconSubtitleView, smartspaceTarget, baseAction, bcSmartspaceCard.mEventNotifier, "BcSmartspaceCard", bcSmartspaceCardLoggingInfo2, i3);
-                bcSmartspaceCard.setFormattedContentDescription(bcSmartspaceCard.mBaseActionIconSubtitleView, baseAction.getSubtitle(), baseAction.getContentDescription());
-            } else {
-                tapAction = null;
-                bcSmartspaceCardLoggingInfo = bcSmartspaceCardLoggingInfo2;
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mBaseActionIconSubtitleView, 4);
-                bcSmartspaceCard.mBaseActionIconSubtitleView.setOnClickListener(null);
-                bcSmartspaceCard.mBaseActionIconSubtitleView.setContentDescription(null);
-            }
-        } else {
-            tapAction = null;
-            bcSmartspaceCardLoggingInfo = bcSmartspaceCardLoggingInfo2;
-        }
-        if (bcSmartspaceCard.mDateView != null) {
-            if (headerAction != null) {
-                uuid = headerAction.getId();
-            } else if (baseAction != null) {
-                uuid = baseAction.getId();
-            } else {
-                uuid = UUID.randomUUID().toString();
-            }
-            BcSmartSpaceUtil.setOnClickListener(bcSmartspaceCard.mDateView, smartspaceTarget, new SmartspaceAction.Builder(uuid, "unusedTitle").setIntent(BcSmartSpaceUtil.getOpenCalendarIntent()).build(), bcSmartspaceCard.mEventNotifier, "BcSmartspaceCard", bcSmartspaceCardLoggingInfo, 0);
-        }
-        if (headerAction != null && (headerAction.getIntent() != null || headerAction.getPendingIntent() != null)) {
-            if (smartspaceTarget.getFeatureType() == 1 && bcSmartspaceCardLoggingInfo.mFeatureType == 39) {
-                i = BcSmartspaceCard.getClickedIndex(bcSmartspaceCardLoggingInfo, 1);
-            } else {
-                i = 0;
-            }
-            BcSmartSpaceUtil.setOnClickListener(bcSmartspaceCard, smartspaceTarget, headerAction, bcSmartspaceCard.mEventNotifier, "BcSmartspaceCard", bcSmartspaceCardLoggingInfo, i);
-        } else if (baseAction != null && (baseAction.getIntent() != null || baseAction.getPendingIntent() != null)) {
-            BcSmartSpaceUtil.setOnClickListener(bcSmartspaceCard, smartspaceTarget, baseAction, bcSmartspaceCard.mEventNotifier, "BcSmartspaceCard", bcSmartspaceCardLoggingInfo, 0);
-        } else {
-            BcSmartSpaceUtil.setOnClickListener(bcSmartspaceCard, smartspaceTarget, headerAction, bcSmartspaceCard.mEventNotifier, "BcSmartspaceCard", bcSmartspaceCardLoggingInfo, 0);
-        }
-        ViewGroup viewGroup6 = bcSmartspaceCard.mSecondaryCardGroup;
-        if (viewGroup6 != null) {
-            ViewGroup.LayoutParams layoutParams2 = (ConstraintLayout.LayoutParams) viewGroup6.getLayoutParams();
-            if (getFeatureType(smartspaceTarget) == -2) {
-                ((ConstraintLayout.LayoutParams) layoutParams2).matchConstraintMaxWidth = (bcSmartspaceCard.getWidth() * 3) / 4;
-            } else {
-                ((ConstraintLayout.LayoutParams) layoutParams2).matchConstraintMaxWidth = bcSmartspaceCard.getWidth() / 2;
-            }
-            bcSmartspaceCard.mSecondaryCardGroup.setLayoutParams(layoutParams2);
-        }
-        bcSmartspaceCard.setPrimaryTextColor(this.mCurrentTextColor);
-        bcSmartspaceCard.setDozeAmount(this.mDozeAmount);
-        Drawable drawable3 = this.mDndImage;
-        ImageView imageView4 = bcSmartspaceCard.mDndImageView;
-        if (imageView4 != null) {
-            if (drawable3 == null) {
-                BcSmartspaceTemplateDataUtils.updateVisibility(imageView4, 8);
-                BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(bcSmartspaceCard.mDndImageView, null);
-            } else {
-                bcSmartspaceCard.mDndIconDrawable.setIcon(drawable3.mutate());
-                bcSmartspaceCard.mDndImageView.setImageDrawable(bcSmartspaceCard.mDndIconDrawable);
-                bcSmartspaceCard.mDndImageView.setContentDescription(this.mDndDescription);
-                BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(bcSmartspaceCard.mDndImageView, bcSmartspaceCard.mDndIconDrawable);
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mDndImageView, 0);
-            }
-            bcSmartspaceCard.updateZenVisibility();
-        }
-        BcNextAlarmData bcNextAlarmData3 = this.mNextAlarmData;
-        ImageView imageView5 = bcSmartspaceCard.mNextAlarmImageView;
-        if (imageView5 != null && bcSmartspaceCard.mNextAlarmTextView != null) {
-            Drawable drawable4 = bcNextAlarmData3.mImage;
-            if (drawable4 == null) {
-                BcSmartspaceTemplateDataUtils.updateVisibility(imageView5, 8);
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mNextAlarmTextView, 8);
-                BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(bcSmartspaceCard.mNextAlarmImageView, null);
-            } else {
-                bcSmartspaceCard.mNextAlarmIconDrawable.setIcon(drawable4);
-                bcSmartspaceCard.mNextAlarmImageView.setImageDrawable(bcSmartspaceCard.mNextAlarmIconDrawable);
-                BcSmartspaceTemplateDataUtils.offsetImageViewForIcon(bcSmartspaceCard.mNextAlarmImageView, bcSmartspaceCard.mNextAlarmIconDrawable);
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mNextAlarmImageView, 0);
-                String description2 = bcNextAlarmData3.getDescription(null);
-                bcSmartspaceCard.mNextAlarmTextView.setContentDescription(bcSmartspaceCard.getContext().getString(R.string.accessibility_next_alarm, description2));
-                bcSmartspaceCard.mNextAlarmTextView.setText(description2);
-                BcSmartspaceTemplateDataUtils.updateVisibility(bcSmartspaceCard.mNextAlarmTextView, 0);
-                bcNextAlarmData3.setOnClickListener(bcSmartspaceCard.mNextAlarmImageView, tapAction, bcSmartspaceCard.mEventNotifier, BcSmartSpaceUtil.getLoggingDisplaySurface(bcSmartspaceCard.getContext().getPackageName(), bcSmartspaceCard.mIsDreaming, bcSmartspaceCard.mDozeAmount));
-                bcNextAlarmData3.setOnClickListener(bcSmartspaceCard.mNextAlarmTextView, tapAction, bcSmartspaceCard.mEventNotifier, BcSmartSpaceUtil.getLoggingDisplaySurface(bcSmartspaceCard.getContext().getPackageName(), bcSmartspaceCard.mIsDreaming, bcSmartspaceCard.mDozeAmount));
-            }
-            bcSmartspaceCard.updateZenVisibility();
+            BcSmartspaceCardLoggerUtil.tryForcePrimaryFeatureTypeAndInjectWeatherSubcard(
+                    loggingInfo, target);
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier =
+                    dataProvider != null
+                            ? event -> dataProvider.notifySmartspaceEvent(event)
+                            : null;
+            holder.legacyCard.bindData(target, notifier, loggingInfo, smartspaceTargets.size() > 1);
+            holder.legacyCard.setPrimaryTextColor(currentTextColor);
+            holder.legacyCard.setDozeAmount(dozeAmount);
         }
     }
 
-    public void setDataProvider(BcSmartspaceDataPlugin plugin) {
-        this.mDataProvider = plugin;
+    @Override
+    public void setBgHandler(Handler handler) {
+        bgHandler = handler;
     }
 
-    public void setPrimaryTextColor(int i) {
-        this.mPrimaryTextColor = i;
-        setDozeAmount(this.mDozeAmount);
+    @Override
+    public void setConfigProvider(BcSmartspaceConfigPlugin configProvider) {
+        this.configProvider = configProvider;
     }
 
-    public void setDnd(Drawable drawable, String str) {
-        this.mDndImage = drawable;
-        this.mDndDescription = str;
-        refreshCards();
+    @Override
+    public void setDataProvider(BcSmartspaceDataPlugin dataProvider) {
+        this.dataProvider = dataProvider;
     }
 
+    @Override
+    public void setDozeAmount(float dozeAmount) {
+        this.dozeAmount = dozeAmount;
+        TransitionType newTransition =
+                previousDozeAmount > dozeAmount
+                        ? TransitionType.TO_LOCKSCREEN
+                        : previousDozeAmount < dozeAmount
+                                ? TransitionType.TO_AOD
+                                : TransitionType.NOT_IN_TRANSITION;
+        transitioningTo = newTransition;
+        previousDozeAmount = dozeAmount;
+        updateTargetVisibility();
+        updateCurrentTextColor();
+    }
+
+    @Override
+    public void setKeyguardBypassEnabled(boolean enabled) {
+        keyguardBypassEnabled = enabled;
+        updateTargetVisibility();
+    }
+
+    @Override
+    public void setMediaTarget(SmartspaceTarget target) {
+        mediaTargets.clear();
+        if (target != null) {
+            mediaTargets.add(target);
+        }
+        updateTargetVisibility();
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void setNonRemoteViewsHorizontalPadding(Integer padding) {
+        nonRemoteViewsHorizontalPadding = padding;
+        for (int i = 0; i < viewHolders.size(); i++) {
+            int key = viewHolders.keyAt(i);
+            BcSmartspaceCard legacyCard = getLegacyCardAtPosition(key);
+            if (legacyCard != null && padding != null) {
+                legacyCard.setPaddingRelative(
+                        padding,
+                        legacyCard.getPaddingTop(),
+                        padding,
+                        legacyCard.getPaddingBottom());
+            }
+            BaseTemplateCard templateCard = getTemplateCardAtPosition(key);
+            if (templateCard != null && padding != null) {
+                templateCard.setPaddingRelative(
+                        padding,
+                        templateCard.getPaddingTop(),
+                        padding,
+                        templateCard.getPaddingBottom());
+            }
+        }
+    }
+
+    @Override
+    public void setPrimaryTextColor(int color) {
+        primaryTextColor = color;
+        updateCurrentTextColor();
+    }
+
+    @Override
+    public void setScreenOn(boolean screenOn) {
+        for (int i = 0; i < viewHolders.size(); i++) {
+            ViewHolder holder = viewHolders.valueAt(i);
+            if (holder != null && holder.card != null) {
+                holder.card.setScreenOn(screenOn);
+            }
+        }
+    }
+
+    @Override
+    public void setTargets(List<SmartspaceTarget> targets) {
+        _aodTargets.clear();
+        _lockscreenTargets.clear();
+        hasDifferentTargets = false;
+        for (SmartspaceTarget target : targets) {
+            if (target.getFeatureType() == 34) {
+                continue;
+            }
+            int screenExtra =
+                    target.getBaseAction() != null && target.getBaseAction().getExtras() != null
+                            ? target.getBaseAction().getExtras().getInt("SCREEN_EXTRA", 3)
+                            : 3;
+            if ((screenExtra & 2) != 0) {
+                _aodTargets.add(target);
+            }
+            if ((screenExtra & 1) != 0) {
+                _lockscreenTargets.add(target);
+            }
+            if (screenExtra != 3) {
+                hasDifferentTargets = true;
+            }
+        }
+        if (!configProvider.isDefaultDateWeatherDisabled()) {
+            addDefaultDateCardIfEmpty(_aodTargets);
+            addDefaultDateCardIfEmpty(_lockscreenTargets);
+        }
+        updateTargetVisibility();
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void setTimeChangedDelegate(BcSmartspaceDataPlugin.TimeChangedDelegate delegate) {
+        timeChangedDelegate = delegate;
+    }
+
+    @Override
     public void setUiSurface(String uiSurface) {
-        this.mUiSurface = uiSurface;
+        this.uiSurface = uiSurface;
     }
 
-    public void setNextAlarm(Drawable drawable, String str) {
-        BcNextAlarmData bcNextAlarmData = this.mNextAlarmData;
-        bcNextAlarmData.mImage = drawable;
-        if (drawable != null) {
-            drawable.mutate();
-        }
-        bcNextAlarmData.mDescription = str;
-        refreshCards();
-    }
-
-    public void setMediaTarget(SmartspaceTarget smartspaceTarget) {
-        this.mMediaTargets.clear();
-        if (smartspaceTarget != null) {
-            this.mMediaTargets.add(smartspaceTarget);
-        }
-        updateTargetVisibility();
-    }
-
-    public void setDozeAmount(float f) {
-        this.mCurrentTextColor = ColorUtils.blendARGB(this.mPrimaryTextColor, this.mDozeColor, f);
-        this.mLastDozeAmount = this.mDozeAmount;
-        this.mDozeAmount = f;
-        updateTargetVisibility();
-        for (int i = 0; i < this.mViewHolders.size(); i++) {
-            SparseArray<ViewHolder> sparseArray = this.mViewHolders;
-            ViewHolder viewHolder = sparseArray.get(sparseArray.keyAt(i));
-            if (viewHolder != null) {
-                BcSmartspaceCard bcSmartspaceCard = viewHolder.mLegacyCard;
-                if (bcSmartspaceCard != null) {
-                    bcSmartspaceCard.setPrimaryTextColor(this.mCurrentTextColor);
-                    bcSmartspaceCard.setDozeAmount(this.mDozeAmount);
+    public void updateCurrentTextColor() {
+        currentTextColor = ColorUtils.blendARGB(primaryTextColor, dozeColor, dozeAmount);
+        for (int i = 0; i < viewHolders.size(); i++) {
+            ViewHolder holder = viewHolders.valueAt(i);
+            if (holder != null) {
+                if (holder.legacyCard != null) {
+                    holder.legacyCard.setPrimaryTextColor(currentTextColor);
+                    holder.legacyCard.setDozeAmount(dozeAmount);
                 }
-                BaseTemplateCard baseTemplateCard = viewHolder.mCard;
-                if (baseTemplateCard != null) {
-                    baseTemplateCard.setPrimaryTextColor(this.mCurrentTextColor);
-                    baseTemplateCard.setDozeAmount(this.mDozeAmount);
+                if (holder.card != null) {
+                    holder.card.setPrimaryTextColor(currentTextColor);
+                    holder.card.setDozeAmount(dozeAmount);
                 }
             }
         }
     }
 
     public void updateTargetVisibility() {
-        ArrayList<SmartspaceTarget> targets;
-        ArrayList<SmartspaceTarget> targets2;
-        if (Float.compare(this.mDozeAmount, 1.0f) == 0) {
-            if (isMediaPreferred(this.mAODTargets)) {
-                targets2 = this.mMediaTargets;
-            } else {
-                targets2 = this.mAODTargets;
-            }
-            this.mSmartspaceTargets = targets2;
-            notifyDataSetChanged();
-            return;
-        }
-        if (isMediaPreferred(this.mLockscreenTargets) && this.mKeyguardBypassEnabled) {
-            targets = this.mMediaTargets;
-        } else {
-            targets = this.mLockscreenTargets;
-        }
-        this.mSmartspaceTargets = targets;
-        if (Float.compare(this.mLastDozeAmount, 0.0f) == 0 || Float.compare(this.mLastDozeAmount, 1.0f) == 0 || Float.compare(this.mDozeAmount, 0.0f) == 0) {
+        List<SmartspaceTarget> targetList =
+                !mediaTargets.isEmpty()
+                        ? mediaTargets
+                        : hasDifferentTargets ? _aodTargets : getLockscreenTargets();
+        List<SmartspaceTarget> lockscreenTargets = getLockscreenTargets();
+        boolean shouldUpdate =
+                smartspaceTargets != targetList
+                        && (dozeAmount == 1f
+                                || (dozeAmount >= 0.36f
+                                        && transitioningTo == TransitionType.TO_AOD));
+        boolean shouldUpdateLockscreen =
+                smartspaceTargets != lockscreenTargets
+                        && (dozeAmount == 0f
+                                || (1f - dozeAmount >= 0.36f
+                                        && transitioningTo == TransitionType.TO_LOCKSCREEN));
+        if (shouldUpdate || shouldUpdateLockscreen) {
+            smartspaceTargets = shouldUpdate ? targetList : lockscreenTargets;
             notifyDataSetChanged();
         }
-    }
-
-    public static int getFeatureType(SmartspaceTarget target) {
-        List<SmartspaceAction> actionChips = target.getActionChips();
-        int featureType = target.getFeatureType();
-        if (actionChips != null && !actionChips.isEmpty()) {
-            if (featureType != 13 || actionChips.size() != 1) {
-                return -1;
-            }
-            return -2;
-        }
-        return featureType;
-    }
-
-    public void addDefaultDateCardIfEmpty(ArrayList<SmartspaceTarget> targets) {
-        if (targets.isEmpty()) {
-            targets.add(new SmartspaceTarget.Builder("date_card_794317_92634", new ComponentName(this.mRoot.getContext(), CardPagerAdapter.class), this.mRoot.getContext().getUser()).setFeatureType(1).build());
+        hasAodLockscreenTransition = targetList != lockscreenTargets;
+        if (configProvider.isDefaultDateWeatherDisabled() && !"home".equals(uiSurface)) {
+            BcSmartspaceTemplateDataUtils.updateVisibility(
+                    root, smartspaceTargets.isEmpty() ? View.GONE : View.VISIBLE);
         }
     }
 
-    public boolean isMediaPreferred(ArrayList<SmartspaceTarget> targets) {
-        return targets.size() == 1 && targets.get(0).getFeatureType() == 1 && !this.mMediaTargets.isEmpty();
+    public enum TransitionType {
+        NOT_IN_TRANSITION,
+        TO_LOCKSCREEN,
+        TO_AOD
     }
 
     public static class ViewHolder {
-        public final BaseTemplateCard mCard;
-        public final BcSmartspaceCard mLegacyCard;
-        public final int mPosition;
-        public SmartspaceTarget mTarget;
+        public final BcSmartspaceCard legacyCard;
+        public SmartspaceTarget target;
+        public final BaseTemplateCard card;
+        public final BcSmartspaceRemoteViewsCard remoteViewsCard;
+        public final int position;
 
-        public ViewHolder(int position, BcSmartspaceCard legacyCard, SmartspaceTarget target, BaseTemplateCard card) {
-            this.mPosition = position;
-            this.mLegacyCard = legacyCard;
-            this.mTarget = target;
-            this.mCard = card;
+        public ViewHolder(
+                int position,
+                BcSmartspaceCard legacyCard,
+                SmartspaceTarget target,
+                BaseTemplateCard card,
+                BcSmartspaceRemoteViewsCard remoteViewsCard) {
+            this.position = position;
+            this.legacyCard = legacyCard;
+            this.target = target;
+            this.card = card;
+            this.remoteViewsCard = remoteViewsCard;
+        }
+
+        public void setTarget(SmartspaceTarget target) {
+            this.target = target;
         }
     }
 }

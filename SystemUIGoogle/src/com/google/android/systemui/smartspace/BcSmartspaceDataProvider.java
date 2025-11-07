@@ -1,107 +1,140 @@
-/*
- * Copyright (C) 2023 The PixelExperience Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.android.systemui.smartspace;
 
 import android.app.smartspace.SmartspaceTarget;
 import android.app.smartspace.SmartspaceTargetEvent;
+import android.content.Context;
 import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import com.google.android.systemui.res.R;
+
+import com.android.systemui.plugins.BcSmartspaceConfigPlugin;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
+
+import com.google.android.systemui.res.R;
+
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 public final class BcSmartspaceDataProvider implements BcSmartspaceDataPlugin {
-    public static final boolean DEBUG = Log.isLoggable("BcSmartspaceDataPlugin", 3);
-    public final HashSet<BcSmartspaceDataPlugin.SmartspaceTargetListener> mSmartspaceTargetListeners = new HashSet<>();
-    public final ArrayList<SmartspaceTarget> mSmartspaceTargets = new ArrayList<>();
-    public HashSet<View> mViews = new HashSet<>();
-    public HashSet<View.OnAttachStateChangeListener> mAttachListeners = new HashSet<>();
-    public BcSmartspaceDataPlugin.SmartspaceEventNotifier mEventNotifier = null;
-    public View.OnAttachStateChangeListener mStateChangeListener = new View.OnAttachStateChangeListener() {
+    public static final boolean DEBUG = Log.isLoggable("BcSmartspaceDataPlugin", Log.DEBUG);
+
+    public final Set<BcSmartspaceDataPlugin.SmartspaceTargetListener> mSmartspaceTargetListeners =
+            new HashSet<>();
+    public final List<SmartspaceTarget> mSmartspaceTargets = new ArrayList<>();
+    public final Set<View> mViews = new HashSet<>();
+    public final Set<View.OnAttachStateChangeListener> mAttachListeners = new HashSet<>();
+    public BcSmartspaceDataPlugin.SmartspaceEventNotifier mEventNotifier;
+    public BcSmartspaceConfigPlugin mConfigProvider = new DefaultBcSmartspaceConfigProvider();
+    public final View.OnAttachStateChangeListener mStateChangeListener =
+            new StateChangeListener(this);
+
+    public BcSmartspaceDataProvider() {}
+
+    @Override
+    public void addOnAttachStateChangeListener(View.OnAttachStateChangeListener listener) {
+        mAttachListeners.add(listener);
+        Iterator<View> iterator = mViews.iterator();
+        while (iterator.hasNext()) {
+            View view = iterator.next();
+            listener.onViewAttachedToWindow(view);
+        }
+    }
+
+    @Override
+    public BcSmartspaceDataPlugin.SmartspaceView getView(ViewGroup parent) {
+        int layoutRes =
+                mConfigProvider.isViewPager2Enabled()
+                        ? R.layout.smartspace_enhanced2
+                        : R.layout.smartspace_enhanced;
+        Context context = parent.getContext();
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View view = inflater.inflate(layoutRes, parent, false);
+        view.addOnAttachStateChangeListener(mStateChangeListener);
+        return (BcSmartspaceDataPlugin.SmartspaceView) view;
+    }
+
+    @Override
+    public void notifySmartspaceEvent(SmartspaceTargetEvent event) {
+        if (mEventNotifier != null) {
+            mEventNotifier.notifySmartspaceEvent(event);
+        }
+    }
+
+    @Override
+    public void onTargetsAvailable(List<SmartspaceTarget> targets) {
+        if (DEBUG) {
+            Log.d(
+                    "BcSmartspaceDataPlugin",
+                    this + " onTargetsAvailable called. Callers = " + Debug.getCallers(3));
+            Log.d("BcSmartspaceDataPlugin", " targets.size() = " + targets.size());
+            Log.d("BcSmartspaceDataPlugin", " targets = " + targets.toString());
+        }
+
+        mSmartspaceTargets.clear();
+        for (SmartspaceTarget target : targets) {
+            if (target.getFeatureType() != 15) {
+                mSmartspaceTargets.add(target);
+            }
+        }
+
+        mSmartspaceTargetListeners.forEach(
+                listener -> listener.onSmartspaceTargetsUpdated(mSmartspaceTargets));
+    }
+
+    @Override
+    public void registerConfigProvider(BcSmartspaceConfigPlugin configProvider) {
+        mConfigProvider = configProvider;
+    }
+
+    @Override
+    public void registerListener(BcSmartspaceDataPlugin.SmartspaceTargetListener listener) {
+        mSmartspaceTargetListeners.add(listener);
+        listener.onSmartspaceTargetsUpdated(mSmartspaceTargets);
+    }
+
+    @Override
+    public void registerSmartspaceEventNotifier(
+            BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier) {
+        mEventNotifier = notifier;
+    }
+
+    @Override
+    public void unregisterListener(BcSmartspaceDataPlugin.SmartspaceTargetListener listener) {
+        mSmartspaceTargetListeners.remove(listener);
+    }
+
+    public static class StateChangeListener implements View.OnAttachStateChangeListener {
+        public final BcSmartspaceDataProvider this$0;
+
+        public StateChangeListener(BcSmartspaceDataProvider provider) {
+            this.this$0 = provider;
+        }
+
         @Override
         public void onViewAttachedToWindow(View view) {
-            BcSmartspaceDataProvider.this.mViews.add(view);
-            BcSmartspaceDataProvider.this.mAttachListeners.forEach(listener -> {
+            this$0.mViews.add(view);
+            Iterator<View.OnAttachStateChangeListener> iterator =
+                    this$0.mAttachListeners.iterator();
+            while (iterator.hasNext()) {
+                View.OnAttachStateChangeListener listener = iterator.next();
                 listener.onViewAttachedToWindow(view);
-            });
+            }
         }
 
         @Override
         public void onViewDetachedFromWindow(View view) {
-            BcSmartspaceDataProvider.this.mViews.remove(view);
-            view.removeOnAttachStateChangeListener(this);
-            BcSmartspaceDataProvider.this.mAttachListeners.forEach(listener -> {
+            this$0.mViews.remove(view);
+            Iterator<View.OnAttachStateChangeListener> iterator =
+                    this$0.mAttachListeners.iterator();
+            while (iterator.hasNext()) {
+                View.OnAttachStateChangeListener listener = iterator.next();
                 listener.onViewDetachedFromWindow(view);
-            });
-        }
-    };
-
-    public void registerListener(BcSmartspaceDataPlugin.SmartspaceTargetListener listener) {
-        this.mSmartspaceTargetListeners.add(listener);
-        listener.onSmartspaceTargetsUpdated(this.mSmartspaceTargets);
-    }
-
-    public void unregisterListener(BcSmartspaceDataPlugin.SmartspaceTargetListener listener) {
-        this.mSmartspaceTargetListeners.remove(listener);
-    }
-
-    public void registerSmartspaceEventNotifier(BcSmartspaceDataPlugin.SmartspaceEventNotifier notifier) {
-        this.mEventNotifier = notifier;
-    }
-
-    public void notifySmartspaceEvent(SmartspaceTargetEvent event) {
-        if (this.mEventNotifier != null) {
-            this.mEventNotifier.notifySmartspaceEvent(event);
-        }
-    }
-
-    public BcSmartspaceDataPlugin.SmartspaceView getView(ViewGroup parent) {
-        View inflate = LayoutInflater.from(parent.getContext()).inflate(R.layout.smartspace_enhanced, parent, false);
-        inflate.addOnAttachStateChangeListener(this.mStateChangeListener);
-        return (BcSmartspaceDataPlugin.SmartspaceView) inflate;
-    }
-
-    public void addOnAttachStateChangeListener(View.OnAttachStateChangeListener listener) {
-        this.mAttachListeners.add(listener);
-        HashSet<View> hashSet = this.mViews;
-        Objects.requireNonNull(listener);
-        hashSet.forEach(v -> mStateChangeListener.onViewAttachedToWindow(v));
-    }
-
-    public void onTargetsAvailable(List<SmartspaceTarget> targets) {
-        if (DEBUG) {
-            Log.d("BcSmartspaceDataPlugin", this + " onTargetsAvailable called. Callers = " + Debug.getCallers(3));
-            Log.d("BcSmartspaceDataPlugin", "    targets.size() = " + targets.size());
-            Log.d("BcSmartspaceDataPlugin", "    targets = " + targets);
-        }
-        this.mSmartspaceTargets.clear();
-        for (SmartspaceTarget smartspaceTarget : targets) {
-            if (smartspaceTarget.getFeatureType() != 15) {
-                this.mSmartspaceTargets.add(smartspaceTarget);
             }
         }
-        this.mSmartspaceTargetListeners.forEach(listener -> {
-            listener.onSmartspaceTargetsUpdated(this.mSmartspaceTargets);
-        });
     }
 }

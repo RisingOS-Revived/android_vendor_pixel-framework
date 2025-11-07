@@ -1,60 +1,62 @@
 /*
- * Copyright (C) 2023 The PixelExperience Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (C) 2025 auroraOSP
+ * SPDX-License-Identifier: Apache-2.0
  */
-
 package com.google.android.systemui.smartspace
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.pm.PackageManager
 import com.android.systemui.CoreStartable
-import com.android.systemui.dagger.SysUISingleton
-import com.android.systemui.flags.FeatureFlags
-import com.android.systemui.flags.Flags
 import com.android.systemui.util.InitializationChecker
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
-@SysUISingleton
 class KeyguardSmartspaceStartable
 @Inject
 constructor(
-    private val context: Context,
-    private val featureFlags: FeatureFlags,
-    private val zenController: KeyguardZenAlarmViewController,
-    private val mediaController: KeyguardMediaViewController,
-    private val initializationChecker: InitializationChecker
+    val zenController: KeyguardZenAlarmViewController,
+    val mediaController: KeyguardMediaViewController,
+    val initializationChecker: InitializationChecker,
 ) : CoreStartable {
+
     override fun start() {
-        when {
-            !initializationChecker.initializeComponents() -> {
-                return
-            }
-            initializationChecker.initializeComponents() -> {
-                zenController.init()
-                mediaController.init()
-            }
-            else -> {
-                context.packageManager.setComponentEnabledSetting(
-                    ComponentName(
-                        "com.android.systemui",
-                        "com.google.android.systemui.keyguard.KeyguardSliceProviderGoogle"
-                    ),
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP
-                )
-            }
+        if (!initializationChecker.initializeComponents()) {
+            return
         }
+
+        zenController.datePlugin.addOnAttachStateChangeListener(
+            object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {
+                    zenController.onViewAttachedToWindow(v)
+                }
+
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    zenController.onViewDetachedFromWindow(v)
+                }
+            }
+        )
+
+        with(zenController.nextClockAlarmController) {
+            if (isUserUnlocked()) {
+                updateSession(userTracker.userContext)
+            }
+            dumpManager.registerNormalDumpable(TAG, this)
+            userTracker.addCallback(userChangedCallback, mainExecutor)
+            applicationScope.launch { zenController.updateNextAlarm() }
+        }
+
+        mediaController.plugin.addOnAttachStateChangeListener(
+            object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {
+                    mediaController.onViewAttachedToWindow(v)
+                }
+
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    mediaController.onViewDetachedFromWindow(v)
+                }
+            }
+        )
+    }
+
+    companion object {
+        const val TAG = "NextClockAlarmCtlr"
     }
 }

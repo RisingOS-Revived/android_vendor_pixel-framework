@@ -6,39 +6,55 @@ public final class BcSmartspaceCardMetadataLoggingInfo {
     public final int mCardTypeId;
     public final int mInstanceId;
 
-    public static final class Builder {
-        public int mCardTypeId;
-        public int mInstanceId;
+    public BcSmartspaceCardMetadataLoggingInfo(Builder builder) {
+        this.mInstanceId = builder.mInstanceId;
+        this.mCardTypeId = builder.mCardTypeId;
     }
 
-    public final boolean equals(Object obj) {
-        boolean z = true;
+    @Override
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
         if (!(obj instanceof BcSmartspaceCardMetadataLoggingInfo)) {
             return false;
         }
-        BcSmartspaceCardMetadataLoggingInfo bcSmartspaceCardMetadataLoggingInfo = (BcSmartspaceCardMetadataLoggingInfo) obj;
-        if (this.mInstanceId != bcSmartspaceCardMetadataLoggingInfo.mInstanceId || this.mCardTypeId != bcSmartspaceCardMetadataLoggingInfo.mCardTypeId) {
-            z = false;
+        BcSmartspaceCardMetadataLoggingInfo bcSmartspaceCardMetadataLoggingInfo =
+                (BcSmartspaceCardMetadataLoggingInfo) obj;
+        return mInstanceId == bcSmartspaceCardMetadataLoggingInfo.mInstanceId
+                && mCardTypeId == bcSmartspaceCardMetadataLoggingInfo.mCardTypeId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mInstanceId, mCardTypeId);
+    }
+
+    @Override
+    public String toString() {
+        return "BcSmartspaceCardMetadataLoggingInfo{mInstanceId="
+                + mInstanceId
+                + ", mCardTypeId="
+                + mCardTypeId
+                + "}";
+    }
+
+    public static final class Builder {
+        public int mCardTypeId;
+        public int mInstanceId;
+
+        public Builder setCardTypeId(int cardTypeId) {
+            this.mCardTypeId = cardTypeId;
+            return this;
         }
-        return z;
-    }
 
-    public final String toString() {
-        StringBuilder m = LogBuilder.m("BcSmartspaceCardMetadataLoggingInfo{mInstanceId=");
-        m.append(this.mInstanceId);
-        m.append(", mCardTypeId=");
-        return LogBuilder.m(m, this.mCardTypeId, '}');
-    }
+        public Builder setInstanceId(int instanceId) {
+            this.mInstanceId = instanceId;
+            return this;
+        }
 
-    public BcSmartspaceCardMetadataLoggingInfo(Builder builder) {
-        this.mInstanceId = builder.mInstanceId;
-        this.mCardTypeId = builder.mCardTypeId;
-    }
-
-    public final int hashCode() {
-        return Objects.hash(Integer.valueOf(this.mInstanceId), Integer.valueOf(this.mCardTypeId));
+        public BcSmartspaceCardMetadataLoggingInfo build() {
+            return new BcSmartspaceCardMetadataLoggingInfo(this);
+        }
     }
 }
